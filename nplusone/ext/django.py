@@ -36,13 +36,13 @@ def parse_reverse_single_related(args, kwargs, context):
 
 
 def parse_many_related(args, kwargs, context):
-    rel = context['rel']
-    return rel.related_model, rel.field.name
+    manager = context['args'][0]
+    return manager.instance.__class__, manager.prefetch_cache_name
 
 
 def parse_foreign_related(args, kwargs, context):
     field = context['rel_field']
-    return field.model, field.name
+    return field.related_model, field.rel.name
 
 
 related.SingleRelatedObjectDescriptor.get_queryset = signalify_queryset(

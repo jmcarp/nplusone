@@ -4,8 +4,9 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 
-from nplusone.core import signals
 import nplusone.ext.sqlalchemy  # noqa
+from tests.utils import calls  # noqa
+pytest.yield_fixture(calls)
 
 
 Base = declarative_base()
@@ -53,33 +54,22 @@ def objects(session):
     session.close()
 
 
-def collect_calls():
-    calls = []
-    def subscriber(sender, args=None, kwargs=None, context=None, parser=None):
-        calls.append(parser(args, kwargs, context))
-    signals.lazy_load.connect(subscriber)
-    return calls, subscriber
-
-
-def test_one_to_many(session, objects):
+def test_one_to_many(session, objects, calls):
     user = session.query(User).first()
-    calls, subscriber = collect_calls()
     user.addresses
     assert len(calls) == 1
     assert calls[0] == (User, 'addresses')
 
 
-def test_many_to_one(session, objects):
+def test_many_to_one(session, objects, calls):
     address = session.query(Address).first()
-    calls, subscriber = collect_calls()
     address.user
     assert len(calls) == 1
     assert calls[0] == (Address, 'user')
 
 
-def test_many_to_many(session, objects):
+def test_many_to_many(session, objects, calls):
     user = session.query(User).first()
-    calls, subscriber = collect_calls()
     user.hobbies
     assert len(calls) == 1
     assert calls[0] == (User, 'hobbies')

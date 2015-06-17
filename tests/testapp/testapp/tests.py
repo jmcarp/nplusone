@@ -14,10 +14,32 @@ from . import models
 @pytest.fixture
 def objects():
     user = models.User.objects.create()
+    occupation = models.Occupation.objects.create(user=user)
     address = models.Address.objects.create(user=user)
     hobby = models.Hobby.objects.create()
     user.hobbies.add(hobby)
-    return user, address
+    return locals()
+
+
+@pytest.mark.django_db
+class TestOneToOne:
+
+    def test_one_to_one(self, objects, calls):
+        occupation = models.Occupation.objects.first()
+        occupation.user
+        assert len(calls) == 1
+        assert calls[0] == (models.Occupation, 'user')
+
+    def test_one_to_one_eager(self, objects, calls):
+        occupation = models.Occupation.objects.select_related('user').first()
+        occupation.user
+        assert len(calls) == 0
+
+    def test_one_to_one_reverse(self, objects, calls):
+        user = models.User.objects.first()
+        user.occupation
+        assert len(calls) == 1
+        assert calls[0] == (models.User, 'occupation')
 
 
 @pytest.mark.django_db

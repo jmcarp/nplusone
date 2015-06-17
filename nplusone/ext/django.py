@@ -29,7 +29,7 @@ def signalify_queryset(func, parser=None, **context):
 
 def parse_single_related(args, kwargs, context):
     descriptor = context['args'][0]
-    return descriptor.related.field.model, descriptor.related.field.name
+    return descriptor.related.model, descriptor.related.name
 
 
 def parse_reverse_single_related(args, kwargs, context):

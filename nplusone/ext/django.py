@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import logging
 import functools
 
@@ -12,14 +13,15 @@ def signalify_queryset(func, parser=None, **context):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         queryset = func(*args, **kwargs)
-        context['args'] = context.get('args', args)
-        context['kwargs'] = context.get('kwargs', kwargs)
-        queryset._clone = signalify_queryset(queryset._clone, parser=parser, **context)
+        ctx = copy.copy(context)
+        ctx['args'] = context.get('args', args)
+        ctx['kwargs'] = context.get('kwargs', kwargs)
+        queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
         queryset.iterator = signals.signalify(
             signals.lazy_load,
             queryset.iterator,
             parser=parser,
-            **context
+            **ctx
         )
         return queryset
     return wrapped

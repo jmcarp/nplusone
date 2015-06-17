@@ -54,22 +54,71 @@ def objects(session):
     session.close()
 
 
-def test_one_to_many(session, objects, calls):
-    user = session.query(User).first()
-    user.addresses
-    assert len(calls) == 1
-    assert calls[0] == (User, 'addresses')
+class TestManyToOne:
+
+    def test_many_to_one(self, session, objects, calls):
+        user = session.query(User).first()
+        user.addresses
+        assert len(calls) == 1
+        assert calls[0] == (User, 'addresses')
+
+    def test_many_to_one_subquery(self, session, objects, calls):
+        user = session.query(User).options(sa.orm.subqueryload('addresses')).first()
+        user.addresses
+        assert len(calls) == 0
+
+    def test_many_to_one_joined(self, session, objects, calls):
+        user = session.query(User).options(sa.orm.joinedload('addresses')).first()
+        user.addresses
+        assert len(calls) == 0
+
+    def test_many_to_one_reverse(self, session, objects, calls):
+        address = session.query(Address).first()
+        address.user
+        assert len(calls) == 1
+        assert calls[0] == (Address, 'user')
+
+    def test_many_to_one_reverse_subquery(self, session, objects, calls):
+        address = session.query(Address).options(sa.orm.subqueryload('user')).first()
+        address.user
+        assert len(calls) == 0
+
+    def test_many_to_one_reverse_joined(self, session, objects, calls):
+        address = session.query(Address).options(sa.orm.joinedload('user')).first()
+        address.user
+        assert len(calls) == 0
 
 
-def test_many_to_one(session, objects, calls):
-    address = session.query(Address).first()
-    address.user
-    assert len(calls) == 1
-    assert calls[0] == (Address, 'user')
+class TestManyToMany:
 
+    def test_many_to_many(self, session, objects, calls):
+        user = session.query(User).first()
+        user.hobbies
+        assert len(calls) == 1
+        assert calls[0] == (User, 'hobbies')
 
-def test_many_to_many(session, objects, calls):
-    user = session.query(User).first()
-    user.hobbies
-    assert len(calls) == 1
-    assert calls[0] == (User, 'hobbies')
+    def test_many_to_many_subquery(self, session, objects, calls):
+        user = session.query(User).options(sa.orm.subqueryload('hobbies')).first()
+        user.hobbies
+        assert len(calls) == 0
+
+    def test_many_to_many_joined(self, session, objects, calls):
+        user = session.query(User).options(sa.orm.joinedload('hobbies')).first()
+        user.hobbies
+        assert len(calls) == 0
+
+    def test_many_to_many_reverse(self, session, objects, calls):
+        hobby = session.query(Hobby).first()
+        hobby.users
+        assert len(calls) == 1
+        assert calls[0] == (Hobby, 'users')
+
+    def test_many_to_many_reverse_subquery(self, session, objects, calls):
+        hobby = session.query(Hobby).options(sa.orm.subqueryload('users')).first()
+        hobby.users
+        assert len(calls) == 0
+
+    def test_many_to_many_reverse_joined(self, session, objects, calls):
+        hobby = session.query(Hobby).options(sa.orm.joinedload('users')).first()
+        hobby.users
+        assert len(calls) == 0

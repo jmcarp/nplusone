@@ -1,0 +1,7 @@
+pytest
+django-pytest
+pytest-django
+pytest-pythonpath
+
+Django
+SQLAlchemy

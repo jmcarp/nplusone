@@ -1,7 +1,16 @@
+# Build tasks
+invoke
+
+# Testing
 pytest
 django-pytest
 pytest-django
 pytest-pythonpath
+tox>=1.5.0
 
+# Packaging
+wheel
+
+# ORMs
 Django
 SQLAlchemy

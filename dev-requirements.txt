@@ -2,11 +2,13 @@
 invoke
 
 # Testing
+mock
 pytest
 django-pytest
 pytest-django
 pytest-pythonpath
 tox>=1.5.0
+flake8
 
 # Packaging
 wheel

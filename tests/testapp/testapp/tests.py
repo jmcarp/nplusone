@@ -2,8 +2,8 @@
 
 from __future__ import absolute_import
 
+import mock
 import pytest
-from unittest import mock
 
 from django.conf import settings
 

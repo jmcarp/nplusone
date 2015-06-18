@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import sys
 from setuptools import setup
 from setuptools import find_packages
 
@@ -36,7 +35,7 @@ def read(fname):
 
 setup(
     name='nplusone',
-    version=find_version('nplusone/__init__.py')
+    version=find_version('nplusone/__init__.py'),
     description='Detecting the n+1 queries problem in Python',
     long_description=read('README.rst'),
     author='Joshua Carp',

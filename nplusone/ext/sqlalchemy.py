@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 from sqlalchemy.orm.strategies import LazyLoader
 
 from nplusone.core import signals

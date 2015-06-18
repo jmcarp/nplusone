@@ -4,6 +4,7 @@ import copy
 import logging
 import functools
 
+from django.conf import settings
 from django.db.models.fields import related
 
 from nplusone.core import signals
@@ -84,9 +85,9 @@ related.create_foreign_related_manager = create_foreign_related_manager
 
 class NPlusOneMiddleware(object):
 
-    def __init__(self, logger=None, level=None):
-        self.logger = logger or logging.getLogger('nplusone')
-        self.level = level or logging.DEBUG
+    def __init__(self):
+        self.logger = getattr(settings, 'NPLUSONE_LOGGER', logging.getLogger('nplusone'))
+        self.level = getattr(settings, 'NPLUSONE_LOG_LEVEL', logging.DEBUG)
 
     def process_request(self, request):
         signals.lazy_load.connect(self.callback)
@@ -95,6 +96,12 @@ class NPlusOneMiddleware(object):
         signals.lazy_load.disconnect(self.callback)
         return response
 
-    def callback(self, args, kwargs, context, parser):
+    def callback(self, caller, args, kwargs, context, parser):
         model, field = parser(args, kwargs, context)
-        self.logger.log(self.level, '{0!r} : {1!r}'.format(model, field))
+        self.logger.log(
+            self.level,
+            'Potential n+1 query detected on `{0}.{1}`'.format(
+                model.__name__,
+                field,
+            ),
+        )

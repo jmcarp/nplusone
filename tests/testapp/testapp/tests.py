@@ -3,6 +3,9 @@
 from __future__ import absolute_import
 
 import pytest
+from unittest import mock
+
+from django.conf import settings
 
 import nplusone.ext.django  # noqa
 from tests.utils import calls  # noqa
@@ -82,3 +85,30 @@ class TestManyToMany:
         list(hobbies[0].users.all())
         assert len(calls) == 1
         assert calls[0] == (models.Hobby, 'users')
+
+
+@pytest.fixture
+def logger(monkeypatch):
+    mock_logger = mock.Mock()
+    monkeypatch.setattr(settings, 'NPLUSONE_LOGGER', mock_logger)
+    return mock_logger
+
+
+@pytest.mark.django_db
+class TestIntegration:
+
+    def test_one_to_one(self, objects, client, logger):
+        client.get('/one_to_one/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'Occupation.user' in args[1]
+
+    def test_many_to_many(self, objects, client, logger):
+        client.get('/many_to_many/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.hobbies' in args[1]
+
+    def test_eager(self, objects, client, logger):
+        client.get('/eager/')
+        assert not logger.log.called

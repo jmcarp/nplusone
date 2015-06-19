@@ -9,7 +9,7 @@ def get_caller():
     return next(
         (
             each for each in reversed(frames)
-            if not any(pattern in each[1] for pattern in patterns)
+            if each[4] and not any(pattern in each[1] for pattern in patterns)
         ),
         None,
     )

@@ -60,7 +60,9 @@ class TestManyToOne:
         user = session.query(User).first()
         user.addresses
         assert len(calls) == 1
-        assert calls[0] == (User, 'addresses')
+        call = calls[0]
+        assert call.objects == (User, 'addresses')
+        assert 'user.addresses' in ''.join(call.frame[4])
 
     def test_many_to_one_subquery(self, session, objects, calls):
         user = session.query(User).options(sa.orm.subqueryload('addresses')).first()
@@ -76,7 +78,9 @@ class TestManyToOne:
         address = session.query(Address).first()
         address.user
         assert len(calls) == 1
-        assert calls[0] == (Address, 'user')
+        call = calls[0]
+        assert call.objects == (Address, 'user')
+        assert 'address.user' in ''.join(call.frame[4])
 
     def test_many_to_one_reverse_subquery(self, session, objects, calls):
         address = session.query(Address).options(sa.orm.subqueryload('user')).first()
@@ -95,7 +99,9 @@ class TestManyToMany:
         user = session.query(User).first()
         user.hobbies
         assert len(calls) == 1
-        assert calls[0] == (User, 'hobbies')
+        call = calls[0]
+        assert call.objects == (User, 'hobbies')
+        assert 'user.hobbies' in ''.join(call.frame[4])
 
     def test_many_to_many_subquery(self, session, objects, calls):
         user = session.query(User).options(sa.orm.subqueryload('hobbies')).first()
@@ -111,7 +117,9 @@ class TestManyToMany:
         hobby = session.query(Hobby).first()
         hobby.users
         assert len(calls) == 1
-        assert calls[0] == (Hobby, 'users')
+        call = calls[0]
+        assert call.objects == (Hobby, 'users')
+        assert 'hobby.users' in ''.join(call.frame[4])
 
     def test_many_to_many_reverse_subquery(self, session, objects, calls):
         hobby = session.query(Hobby).options(sa.orm.subqueryload('users')).first()

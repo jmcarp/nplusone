@@ -31,7 +31,9 @@ class TestOneToOne:
         occupation = models.Occupation.objects.first()
         occupation.user
         assert len(calls) == 1
-        assert calls[0] == (models.Occupation, 'user')
+        call = calls[0]
+        assert call.objects == (models.Occupation, 'user')
+        assert 'occupation.user' in ''.join(call.frame[4])
 
     def test_one_to_one_eager(self, objects, calls):
         occupation = models.Occupation.objects.select_related('user').first()
@@ -42,7 +44,9 @@ class TestOneToOne:
         user = models.User.objects.first()
         user.occupation
         assert len(calls) == 1
-        assert calls[0] == (models.User, 'occupation')
+        call = calls[0]
+        assert call.objects == (models.User, 'occupation')
+        assert 'user.occupation' in ''.join(call.frame[4])
 
 
 @pytest.mark.django_db
@@ -52,7 +56,9 @@ class TestManyToOne:
         address = models.Address.objects.first()
         address.user
         assert len(calls) == 1
-        assert calls[0] == (models.Address, 'user')
+        call = calls[0]
+        assert call.objects == (models.Address, 'user')
+        assert 'address.user' in ''.join(call.frame[4])
 
     def test_many_to_one_eager(self, objects, calls):
         address = models.Address.objects.select_related('user').first()
@@ -63,7 +69,9 @@ class TestManyToOne:
         user = models.User.objects.first()
         user.addresses.first()
         assert len(calls) == 1
-        assert calls[0] == (models.User, 'addresses')
+        call = calls[0]
+        assert call.objects == (models.User, 'addresses')
+        assert 'user.addresses' in ''.join(call.frame[4])
 
 
 @pytest.mark.django_db
@@ -73,7 +81,9 @@ class TestManyToMany:
         users = models.User.objects.all()
         list(users[0].hobbies.all())
         assert len(calls) == 1
-        assert calls[0] == (models.User, 'hobbies')
+        call = calls[0]
+        assert call.objects == (models.User, 'hobbies')
+        assert 'users[0].hobbies' in ''.join(call.frame[4])
 
     def test_many_to_many_eager(self, objects, calls):
         users = models.User.objects.all().prefetch_related('hobbies')
@@ -84,7 +94,9 @@ class TestManyToMany:
         hobbies = models.Hobby.objects.all()
         list(hobbies[0].users.all())
         assert len(calls) == 1
-        assert calls[0] == (models.Hobby, 'users')
+        call = calls[0]
+        assert call.objects == (models.Hobby, 'users')
+        assert 'hobbies[0].users' in ''.join(call.frame[4])
 
 
 @pytest.fixture

@@ -11,11 +11,17 @@ python:
 env:
   - PYTHONPATH=tests/testapp
 
+before_install:
+  - travis_retry pip install codecov
+
 install:
-  - pip install -U -r dev-requirements.txt
-  - pip install -U .
+  - travis_retry pip install -U -r dev-requirements.txt
+  - travis_retry pip install -U .
 
 before_script:
     - flake8 .
 
 script: py.test
+
+after_success:
+  codecov

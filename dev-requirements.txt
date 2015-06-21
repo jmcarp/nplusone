@@ -4,6 +4,7 @@ invoke
 # Testing
 mock
 pytest
+pytest-cov
 django-pytest
 pytest-django
 pytest-pythonpath

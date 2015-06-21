@@ -16,3 +16,4 @@ wheel
 # ORMs
 Django
 SQLAlchemy
+Flask-SQLAlchemy

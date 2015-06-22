@@ -19,20 +19,31 @@ def signalify_queryset(func, parser=None, **context):
         ctx = copy.copy(context)
         ctx['args'] = context.get('args', args)
         ctx['kwargs'] = context.get('kwargs', kwargs)
-        queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
-        queryset.iterator = signals.signalify(
-            signals.lazy_load,
-            queryset.iterator,
-            parser=parser,
-            **ctx
-        )
+        # In Django 1.7.x, some `get_queryset` methods return a `Manager`, not a
+        # `QuerySet`; in this case, patch the `get_queryset` method of the returned
+        # `Manager`.
+        if hasattr(queryset, 'get_queryset'):  # pragma: no cover
+            queryset.get_queryset = signalify_queryset(
+                queryset.get_queryset,
+                parser=parser,
+                **ctx
+            )
+        else:
+            queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
+            queryset.iterator = signals.signalify(
+                signals.lazy_load,
+                queryset.iterator,
+                parser=parser,
+                **ctx
+            )
         return queryset
     return wrapped
 
 
 def parse_single_related(args, kwargs, context):
     descriptor = context['args'][0]
-    return descriptor.related.model, descriptor.related.name
+    field = descriptor.related.field
+    return field.related_field.model, field.rel.related_name
 
 
 def parse_reverse_single_related(args, kwargs, context):
@@ -47,7 +58,7 @@ def parse_many_related(args, kwargs, context):
 
 def parse_foreign_related(args, kwargs, context):
     field = context['rel_field']
-    return field.related_model, field.rel.name
+    return field.related_field.model, field.rel.related_name
 
 
 related.SingleRelatedObjectDescriptor.get_queryset = signalify_queryset(

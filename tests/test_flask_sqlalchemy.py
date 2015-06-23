@@ -6,7 +6,6 @@ import pytest
 import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
-import nplusone.ext.sqlalchemy  # noqa
 from nplusone.ext.flask_sqlalchemy import NPlusOne
 
 from tests import utils

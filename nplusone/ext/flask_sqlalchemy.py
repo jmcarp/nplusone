@@ -3,6 +3,7 @@
 import logging
 
 from nplusone.core import signals
+import nplusone.ext.sqlalchemy  # noqa
 
 
 class NPlusOne(object):

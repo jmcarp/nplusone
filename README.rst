@@ -23,8 +23,19 @@ Many object-relational mapping (ORM) libraries default to lazy loading for relat
 
 ``nplusone`` is an ORM profiling tool to help diagnose and improve poor performance caused by inappropriate lazy loading. ``nplusone`` monitors applications using Django or SQLAlchemy and sends warnings when potentially expensive lazy loads are emitted. It can identify the offending relationship attribute and specific lines of code behind the problem, and recommend fixes for better performance.
 
+Installation
+============
+
+::
+
+    pip install -U nplusone
+
+nplusone supports Python >= 2.7 or >= 3.3.
+
 Usage
 =====
+
+Note: ``nplusone`` should only be used for development and should not be deployed to production environments.
 
 Django
 ******
@@ -47,6 +58,36 @@ Optionally configure logging settings ::
 
     NPLUSONE_LOGGER = logging.getLogger('nplusone')
     NPLUSONE_LOG_LEVEL = logging.WARN
+
+When your app loads data lazily, ``nplusone`` will emit a warning ::
+
+    Potential n+1 query detected on `<model>.<field>`
+
+Consider using `select_related <https://docs.djangoproject.com/en/1.8/ref/models/querysets/#select-related>`_ or `prefetch_related <https://docs.djangoproject.com/en/1.8/ref/models/querysets/#prefetch-related>`_ in this case.
+
+Flask-SQLAlchemy
+****************
+
+Wrap application with ``NPlusOne`` ::
+
+    from flask import Flask
+    from nplusone.ext.flask_sqlalchemy import NPlusOne
+
+    app = Flask(__name__)
+    NPlusOne(app)
+
+Optionally configure logging settings ::
+
+    app = Flask(__name__)
+    app.config['NPLUSONE_LOGGER'] = logging.getLogger('app.nplusone')
+    app.config['NPLUSONE_LOG_LEVEL'] = logging.ERROR
+    NPlusOne(app)
+
+When your app loads data lazily, ``nplusone`` will emit a warning ::
+
+    Potential n+1 query detected on `<model>.<field>`
+
+Consider using ``subqueryload`` or ``joinedload`` in this case; see SQLAlchemy's guide to `relationship loading <http://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html>`_ for complete documentation.
 
 License
 =======

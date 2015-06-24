@@ -4,6 +4,7 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 
+from nplusone.core import signals
 import nplusone.ext.sqlalchemy  # noqa
 
 from tests import utils
@@ -44,6 +45,12 @@ class TestManyToOne:
         call = calls[0]
         assert call.objects == (models.User, 'addresses')
         assert 'user.addresses' in ''.join(call.frame[4])
+
+    def test_many_to_one_ignore(self, session, objects, calls):
+        user = session.query(models.User).first()
+        with signals.ignore():
+            user.addresses
+        assert len(calls) == 0
 
     def test_many_to_one_subquery(self, session, objects, calls):
         user = session.query(

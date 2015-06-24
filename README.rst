@@ -89,6 +89,17 @@ When your app loads data lazily, ``nplusone`` will emit a warning ::
 
 Consider using ``subqueryload`` or ``joinedload`` in this case; see SQLAlchemy's guide to `relationship loading <http://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html>`_ for complete documentation.
 
+Ignoring Warnings
+*****************
+
+To suppress warnings thrown by intentional lazy loading, use the ``ignore`` context manager ::
+
+    from nplusone.core import signals
+
+    with signals.ignore():
+        # lazy-load rows
+        # ...
+
 License
 =======
 

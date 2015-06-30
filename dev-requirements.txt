@@ -18,3 +18,4 @@ wheel
 Django
 SQLAlchemy
 Flask-SQLAlchemy
+peewee

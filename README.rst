@@ -14,7 +14,7 @@ nplusone
     :target: https://codecov.io/github/jmcarp/nplusone
     :alt: Code coverage
 
-nplusone is a library for detecting the n+1 queries problem in Python ORMs, including SQLAlchemy and the Django ORM.
+nplusone is a library for detecting the n+1 queries problem in Python ORMs, including SQLAlchemy, Peewee, and the Django ORM.
 
 The Problem
 ===========

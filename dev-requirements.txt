@@ -4,6 +4,7 @@ invoke
 # Testing
 mock
 pytest
+WebTest
 pytest-cov
 django-pytest
 pytest-django

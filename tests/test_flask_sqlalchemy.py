@@ -3,6 +3,7 @@
 import mock
 import flask
 import pytest
+import webtest
 import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
@@ -36,7 +37,6 @@ def app(db, models):
     app = flask.Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     db.init_app(app)
-    NPlusOne(app)
     with app.app_context():
         db.create_all()
         yield app
@@ -64,11 +64,20 @@ def routes(app, models):
         user = models.User.query.options(sa.orm.subqueryload('hobbies')).first()
         return str(user.hobbies)
 
+    @app.route('/eager_join_unused/')
+    def eager_join_unused():
+        user = models.User.query.options(sa.orm.joinedload('hobbies')).first()
+        return str(user)
 
-@pytest.yield_fixture
+    @app.route('/eager_subquery_unused/')
+    def eager_subquery_unused():
+        user = models.User.query.options(sa.orm.subqueryload('hobbies')).first()
+        return str(user)
+
+
+@pytest.fixture
 def client(app, routes):
-    with app.test_client() as client:
-        yield client
+    return webtest.TestApp(app)
 
 
 @pytest.fixture
@@ -95,3 +104,15 @@ class TestNPlusOne:
     def test_eager(self, objects, client, logger):
         client.get('/eager/')
         assert not logger.log.called
+
+    def test_eager_join_unused(self, objects, client, logger):
+        client.get('/eager_join_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.hobbies' in args[1]
+
+    def test_eager_subquery_unused(self, objects, client, logger):
+        client.get('/eager_subquery_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.hobbies' in args[1]

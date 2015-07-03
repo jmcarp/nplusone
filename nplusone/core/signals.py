@@ -7,12 +7,24 @@ import blinker
 
 
 lazy_load = blinker.Signal()
+eager_load = blinker.Signal()
+touch = blinker.Signal()
 
 
-def signalify(signal, func, parser=None, **context):
+noop = lambda *a, **kw: None
+
+
+def signalify(signal, func, sender=None, parser=None, **context):
+    sender = sender or noop
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        signal.send(None, args=args, kwargs=kwargs, parser=parser, context=context)
+        signal.send(
+            sender(*args, **kwargs),
+            args=args,
+            kwargs=kwargs,
+            context=context,
+            parser=parser,
+        )
         return func(*args, **kwargs)
     return wrapped
 

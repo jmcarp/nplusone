@@ -18,13 +18,18 @@ class NPlusOne(object):
     def init_app(self):
         @self.app.before_request
         def connect():
-            signals.lazy_load.connect(self.callback)
+            signals.lazy_load.connect(self.handle_lazy)
+            signals.eager_load.connect(self.handle_eager)
+            self.touched = set()
 
         @self.app.teardown_request
         def disconnect(error=None):
-            signals.lazy_load.disconnect(self.callback)
+            signals.lazy_load.disconnect(self.handle_lazy)
+            signals.eager_load.disconnect(self.handle_eager)
+            signals.touch.disconnect(self.handle_touch)
+            self.log_eager()
 
-    def callback(self, caller, args, kwargs, context, parser):
+    def handle_lazy(self, caller, args, kwargs, context, parser):
         model, field = parser(args, kwargs, context)
         self.logger.log(
             self.level,
@@ -33,3 +38,22 @@ class NPlusOne(object):
                 field,
             ),
         )
+
+    def handle_eager(self, caller, args, kwargs, context, parser):
+        model, field = parser(args, kwargs, context)
+        attr = getattr(model, field)
+        signals.touch.connect(self.handle_touch, sender=attr)
+        self.touched.add(attr)
+
+    def handle_touch(self, caller, args, kwargs, context, parser):
+        self.touched.remove(caller)
+
+    def log_eager(self):
+        for attr in self.touched:
+            self.logger.log(
+                self.level,
+                'Potential unnecessary eager load detected on `{0}.{1}`'.format(
+                    attr.class_.__name__,
+                    attr.key,
+                ),
+            )

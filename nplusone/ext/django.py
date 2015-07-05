@@ -7,6 +7,7 @@ import logging
 import functools
 
 from django.conf import settings
+from django.db.models import query
 from django.db.models.fields import related
 
 from nplusone.core import signals
@@ -59,6 +60,12 @@ def parse_many_related(args, kwargs, context):
 def parse_foreign_related(args, kwargs, context):
     field = context['rel_field']
     return field.related_field.model, field.rel.related_name
+
+
+query.prefetch_one_level = signals.designalify(
+    signals.lazy_load,
+    query.prefetch_one_level,
+)
 
 
 related.SingleRelatedObjectDescriptor.get_queryset = signalify_queryset(

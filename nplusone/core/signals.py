@@ -11,15 +11,14 @@ eager_load = blinker.Signal()
 touch = blinker.Signal()
 
 
-noop = lambda *a, **kw: None
+get_worker = lambda: blinker.ANY
 
 
-def signalify(signal, func, sender=None, parser=None, **context):
-    sender = sender or noop
+def signalify(signal, func, parser=None, **context):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         signal.send(
-            sender(*args, **kwargs),
+            get_worker(),
             args=args,
             kwargs=kwargs,
             context=context,
@@ -29,10 +28,21 @@ def signalify(signal, func, sender=None, parser=None, **context):
     return wrapped
 
 
+def designalify(signal, func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        with ignore(signal, sender=get_worker()):
+            return func(*args, **kwargs)
+    return wrapped
+
+
 @contextlib.contextmanager
-def ignore():
-    receivers, lazy_load.receivers = lazy_load.receivers, {}
+def ignore(signal, sender=blinker.ANY):
+    receivers = list(signal.receivers_for(sender))
+    for receiver in receivers:
+        signal.disconnect(receiver, sender=sender)
     try:
         yield
     finally:
-        lazy_load.receivers = receivers
+        for receiver in receivers:
+            signal.connect(receiver, sender=sender)

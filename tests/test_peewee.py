@@ -83,7 +83,7 @@ class TestManyToOne:
 
     def test_many_to_one_ignore(self, models, session, objects, calls):
         user = models.User.select().first()
-        with signals.ignore():
+        with signals.ignore(signals.lazy_load):
             user.addresses
         assert len(calls) == 0
 

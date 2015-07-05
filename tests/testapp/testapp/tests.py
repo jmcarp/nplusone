@@ -34,8 +34,13 @@ class TestOneToOne:
         assert call.objects == (models.Occupation, 'user')
         assert 'occupation.user' in ''.join(call.frame[4])
 
-    def test_one_to_one_eager(self, objects, calls):
+    def test_one_to_one_select(self, objects, calls):
         occupation = models.Occupation.objects.select_related('user').first()
+        occupation.user
+        assert len(calls) == 0
+
+    def test_one_to_one_prefetch(self, objects, calls):
+        occupation = models.Occupation.objects.prefetch_related('user').first()
         occupation.user
         assert len(calls) == 0
 
@@ -59,9 +64,14 @@ class TestManyToOne:
         assert call.objects == (models.Address, 'user')
         assert 'address.user' in ''.join(call.frame[4])
 
-    def test_many_to_one_eager(self, objects, calls):
-        address = models.Address.objects.select_related('user').first()
-        address.user
+    def test_many_to_one_select(self, objects, calls):
+        address = list(models.Address.objects.select_related('user').all())
+        address[0].user
+        assert len(calls) == 0
+
+    def test_many_to_one_prefetch(self, objects, calls):
+        address = list(models.Address.objects.prefetch_related('user').all())
+        address[0].user
         assert len(calls) == 0
 
     def test_many_to_one_reverse(self, objects, calls):
@@ -84,7 +94,7 @@ class TestManyToMany:
         assert call.objects == (models.User, 'hobbies')
         assert 'users[0].hobbies' in ''.join(call.frame[4])
 
-    def test_many_to_many_eager(self, objects, calls):
+    def test_many_to_many_prefetch(self, objects, calls):
         users = models.User.objects.all().prefetch_related('hobbies')
         users[0].hobbies.all()
         assert len(calls) == 0
@@ -96,6 +106,11 @@ class TestManyToMany:
         call = calls[0]
         assert call.objects == (models.Hobby, 'users')
         assert 'hobbies[0].users' in ''.join(call.frame[4])
+
+    def test_many_to_many_reverse_prefetch(self, objects, calls):
+        hobbies = models.Hobby.objects.all().prefetch_related('users')
+        list(hobbies[0].users.all())
+        assert len(calls) == 0
 
 
 @pytest.fixture

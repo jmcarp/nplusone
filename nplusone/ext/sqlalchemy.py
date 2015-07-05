@@ -18,8 +18,9 @@ def parse_eager_load(args, kwargs, context):
     return loader.parent.class_, loader.key
 
 
-def parse_attribute_get(self, *args, **kwargs):
-    return self
+def parse_attribute_get(args, kwargs, context):
+    attr = args[0]
+    return attr.class_, attr.key
 
 
 strategies.LazyLoader._load_for_state = signals.signalify(
@@ -46,5 +47,5 @@ strategies.SubqueryLoader._apply_joins = signals.signalify(
 attributes.InstrumentedAttribute.__get__ = signals.signalify(
     signals.touch,
     attributes.InstrumentedAttribute.__get__,
-    sender=parse_attribute_get,
+    parser=parse_attribute_get,
 )

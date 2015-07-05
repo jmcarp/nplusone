@@ -8,8 +8,14 @@ import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
 from nplusone.ext.flask_sqlalchemy import NPlusOne
+from nplusone.ext.flask_sqlalchemy import setup_state
 
 from tests import utils
+
+
+@pytest.fixture(scope='module', autouse=True)
+def setup():
+    setup_state()
 
 
 @pytest.fixture

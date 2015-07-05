@@ -7,10 +7,16 @@ import pytest
 
 from django.conf import settings
 
+from nplusone.ext.django import setup_state
 from tests.utils import calls  # noqa
 pytest.yield_fixture(calls)
 
 from . import models
+
+
+@pytest.fixture(scope='module', autouse=True)
+def setup():
+    setup_state()
 
 
 @pytest.fixture

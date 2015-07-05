@@ -6,12 +6,25 @@ import copy
 import logging
 import functools
 
+import six
+import blinker
+
 from django.conf import settings
 from django.db.models import query
 from django.db.models import query_utils
 from django.db.models.fields import related
 
 from nplusone.core import signals
+from nplusone.core import listeners
+
+
+def get_worker():
+    return blinker.ANY
+
+
+def setup_state():
+    signals.get_worker = get_worker
+setup_state()
 
 
 def signalify_queryset(func, parser=None, **context):
@@ -128,7 +141,7 @@ def select_related_descend(*args, **kwargs):
     ret = original_select_related_descend(*args, **kwargs)
     if ret:
         signals.eager_load.send(
-            signals.get_worker(),
+            get_worker(),
             args=args,
             kwargs=kwargs,
             parser=parse_select_related,
@@ -164,7 +177,7 @@ original_iterate_queryset = query.QuerySet.__iter__
 def iterate_queryset(self):
     if self._prefetch_done:
         signals.touch.send(
-            signals.get_worker(),
+            get_worker(),
             args=(self, ),
             parser=parse_iterate_queryset,
         )
@@ -177,7 +190,7 @@ original_getitem_queryset = query.QuerySet.__getitem__
 def getitem_queryset(self, index):
     if self._prefetch_done:
         signals.touch.send(
-            signals.get_worker(),
+            get_worker(),
             args=(self, ),
             parser=parse_iterate_queryset,
         )
@@ -190,44 +203,19 @@ class NPlusOneMiddleware(object):
     def __init__(self):
         self.logger = getattr(settings, 'NPLUSONE_LOGGER', logging.getLogger('nplusone'))
         self.level = getattr(settings, 'NPLUSONE_LOG_LEVEL', logging.DEBUG)
+        self.listeners = {}
 
     def process_request(self, request):
-        signals.lazy_load.connect(self.handle_lazy)
-        signals.eager_load.connect(self.handle_eager)
-        self.touched = set()
+        self.listeners[request] = self.listeners.get(request, {})
+        for name, listener_type in six.iteritems(listeners.listeners):
+            self.listeners[request][name] = listener_type(self)
+            self.listeners[request][name].setup()
 
     def process_response(self, request, response):
-        signals.lazy_load.disconnect(self.handle_lazy)
-        signals.eager_load.disconnect(self.handle_eager)
-        self.log_eager()
+        for name, listener_type in six.iteritems(listeners.listeners):
+            listener = self.listeners[request].pop(name)
+            listener.teardown()
         return response
 
-    def handle_lazy(self, caller, args, kwargs, context, parser):
-        model, field = parser(args, kwargs, context)
-        self.logger.log(
-            self.level,
-            'Potential n+1 query detected on `{0}.{1}`'.format(
-                model.__name__,
-                field,
-            ),
-        )
-
-    def handle_eager(self, caller, args, kwargs, context, parser):
-        signals.touch.connect(self.handle_touch)
-        parsed = parser(args, kwargs, context)
-        self.touched.add(parsed)
-
-    def handle_touch(self, caller, args=None, kwargs=None, context=None, parser=None):
-        parsed = parser(args, kwargs, context)
-        if parsed in self.touched:
-            self.touched.remove(parsed)
-
-    def log_eager(self):
-        for model, field in self.touched:
-            self.logger.log(
-                self.level,
-                'Potential unnecessary eager load detected on `{0}.{1}`'.format(
-                    model.__name__,
-                    field,
-                ),
-            )
+    def log(self, message):
+        self.logger.log(self.level, message)

@@ -6,6 +6,7 @@ from setuptools import find_packages
 
 
 REQUIRES = [
+    'six>=1.9.0',
     'blinker>=1.3',
 ]
 

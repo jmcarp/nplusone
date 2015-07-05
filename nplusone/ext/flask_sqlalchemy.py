@@ -2,8 +2,25 @@
 
 import logging
 
+import six
+from flask import g
+from flask import request
+
 from nplusone.core import signals
+from nplusone.core import listeners
 import nplusone.ext.sqlalchemy  # noqa
+
+
+def get_worker():
+    try:
+        return request._get_current_object()
+    except RuntimeError:
+        return None
+
+
+def setup_state():
+    signals.get_worker = get_worker
+setup_state()
 
 
 class NPlusOne(object):
@@ -18,42 +35,16 @@ class NPlusOne(object):
     def init_app(self):
         @self.app.before_request
         def connect():
-            signals.lazy_load.connect(self.handle_lazy)
-            signals.eager_load.connect(self.handle_eager)
-            self.touched = set()
+            g.listeners = getattr(g, 'listeners', {})
+            for name, listener_type in six.iteritems(listeners.listeners):
+                g.listeners[name] = listener_type(self)
+                g.listeners[name].setup()
 
         @self.app.teardown_request
         def disconnect(error=None):
-            signals.lazy_load.disconnect(self.handle_lazy)
-            signals.eager_load.disconnect(self.handle_eager)
-            signals.touch.disconnect(self.handle_touch)
-            self.log_eager()
+            for name, listener_type in six.iteritems(listeners.listeners):
+                listener = g.listeners.pop(name)
+                listener.teardown()
 
-    def handle_lazy(self, caller, args, kwargs, context, parser):
-        model, field = parser(args, kwargs, context)
-        self.logger.log(
-            self.level,
-            'Potential n+1 query detected on `{0}.{1}`'.format(
-                model.__name__,
-                field,
-            ),
-        )
-
-    def handle_eager(self, caller, args, kwargs, context, parser):
-        model, field = parser(args, kwargs, context)
-        attr = getattr(model, field)
-        signals.touch.connect(self.handle_touch, sender=attr)
-        self.touched.add(attr)
-
-    def handle_touch(self, caller, args, kwargs, context, parser):
-        self.touched.remove(caller)
-
-    def log_eager(self):
-        for attr in self.touched:
-            self.logger.log(
-                self.level,
-                'Potential unnecessary eager load detected on `{0}.{1}`'.format(
-                    attr.class_.__name__,
-                    attr.key,
-                ),
-            )
+    def log(self, message):
+        self.logger.log(self.level, message)

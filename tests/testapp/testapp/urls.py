@@ -22,5 +22,10 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^one_to_one/$', views.one_to_one),
     url(r'^many_to_many/$', views.many_to_many),
-    url(r'^eager/$', views.eager),
+    url(r'^eager_select/$', views.eager_select),
+    url(r'^eager_prefetch/$', views.eager_prefetch),
+    url(r'^eager_prefetch_item/$', views.eager_prefetch_item),
+    url(r'^eager_select_unused/$', views.eager_select_unused),
+    url(r'^eager_prefetch_scalar/$', views.eager_prefetch_scalar),
+    url(r'^eager_prefetch_scalar_unused/$', views.eager_prefetch_scalar_unused),
 ]

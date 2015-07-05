@@ -135,6 +135,30 @@ class TestIntegration:
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
 
-    def test_eager(self, objects, client, logger):
-        client.get('/eager/')
+    def test_eager_select(self, objects, client, logger):
+        client.get('/eager_select/')
         assert not logger.log.called
+
+    def test_eager_prefetch(self, objects, client, logger):
+        client.get('/eager_prefetch/')
+        assert not logger.log.called
+
+    def test_eager_prefetch_item(self, objects, client, logger):
+        client.get('/eager_prefetch_item/')
+        assert not logger.log.called
+
+    def test_eager_select_unused(self, objects, client, logger):
+        client.get('/eager_select_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.occupation' in args[1]
+
+    def test_eager_prefetch_scalar(self, objects, client, logger):
+        client.get('/eager_prefetch_scalar/')
+        assert not logger.log.called
+
+    def test_eager_prefetch_scalar_unused(self, objects, client, logger):
+        client.get('/eager_prefetch_scalar_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.occupation' in args[1]

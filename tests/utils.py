@@ -22,7 +22,7 @@ def calls():
                 stack.get_caller(),
             )
         )
-    signals.lazy_load.connect(subscriber)
+    signals.lazy_load.connect(subscriber, sender=signals.get_worker())
     yield calls
 
 

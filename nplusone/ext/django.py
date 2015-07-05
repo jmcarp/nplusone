@@ -4,10 +4,11 @@ from __future__ import absolute_import
 
 import copy
 import logging
+import weakref
 import functools
+import threading
 
 import six
-import blinker
 
 from django.conf import settings
 from django.db.models import query
@@ -19,7 +20,7 @@ from nplusone.core import listeners
 
 
 def get_worker():
-    return blinker.ANY
+    return str(threading.current_thread().ident)
 
 
 def setup_state():
@@ -204,7 +205,7 @@ class NPlusOneMiddleware(object):
     def __init__(self):
         self.logger = getattr(settings, 'NPLUSONE_LOGGER', logging.getLogger('nplusone'))
         self.level = getattr(settings, 'NPLUSONE_LOG_LEVEL', logging.DEBUG)
-        self.listeners = {}
+        self.listeners = weakref.WeakKeyDictionary()
 
     def process_request(self, request):
         self.listeners[request] = self.listeners.get(request, {})

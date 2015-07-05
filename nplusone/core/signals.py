@@ -31,13 +31,14 @@ def signalify(signal, func, parser=None, **context):
 def designalify(signal, func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        with ignore(signal, sender=get_worker()):
+        with ignore(signal):
             return func(*args, **kwargs)
     return wrapped
 
 
 @contextlib.contextmanager
-def ignore(signal, sender=blinker.ANY):
+def ignore(signal, sender=None):
+    sender = sender or get_worker()
     receivers = list(signal.receivers_for(sender))
     for receiver in receivers:
         signal.disconnect(receiver, sender=sender)

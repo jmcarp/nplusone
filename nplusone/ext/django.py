@@ -168,8 +168,8 @@ related.SingleRelatedObjectDescriptor.__get__ = signals.signalify(
 
 def parse_iterate_queryset(args, kwargs, context):
     self = args[0]
-    rel = self._context['rel']
-    return rel.field.model, rel.field.name
+    manager = self._context['args'][0]
+    return manager.instance.__class__, manager.prefetch_cache_name
 
 
 # Emit `touch` on iterating prefetched `QuerySet` instances

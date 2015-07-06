@@ -2,16 +2,16 @@
 nplusone
 ========
 
-.. image:: https://badge.fury.io/py/nplusone.png
-    :target: http://badge.fury.io/py/nplusone
+.. image:: https://img.shields.io/pypi/v/nplusone.svg
+    :target: https://img.shields.io/pypi/v/nplusone.svg
     :alt: Latest version
 
-.. image:: https://travis-ci.org/jmcarp/nplusone.png?branch=master
-    :target: https://travis-ci.org/jmcarp/nplusone
+.. image:: https://img.shields.io/travis/jmcarp/nplusone/master.svg
+    :target: https://img.shields.io/travis/jmcarp/nplusone/master.svg
     :alt: Travis-CI
 
-.. image:: https://codecov.io/github/jmcarp/nplusone/coverage.svg
-    :target: https://codecov.io/github/jmcarp/nplusone
+.. image:: https://img.shields.io/codecov/c/github/jmcarp/nplusone/master.svg
+    :target: https://img.shields.io/codecov/c/github/jmcarp/nplusone/master.svg
     :alt: Code coverage
 
 nplusone is a library for detecting the n+1 queries problem in Python ORMs, including SQLAlchemy, Peewee, and the Django ORM.

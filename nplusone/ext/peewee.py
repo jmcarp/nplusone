@@ -4,7 +4,11 @@ from __future__ import absolute_import
 
 from peewee import RelationDescriptor
 from peewee import ReverseRelationDescriptor
-from playhouse import shortcuts
+
+try:
+    from playhouse import fields
+except ImportError:  # pragma: no cover
+    from playhouse import shortcuts as fields
 
 from nplusone.core import signals
 
@@ -55,10 +59,10 @@ def reverse_get_many(self, instance, instance_type=None):
             kwargs={'instance_type': instance_type},
             parser=parse_get_object,
         )
-        return (shortcuts.ManyToManyQuery(instance, self, self.rel_model)
+        return (fields.ManyToManyQuery(instance, self, self.rel_model)
                 .select()
                 .join(self.through_model)
                 .join(self.model_class)
                 .where(self.src_fk == instance))
     return self.field
-shortcuts.ManyToManyFieldDescriptor.__get__ = reverse_get_many
+fields.ManyToManyFieldDescriptor.__get__ = reverse_get_many

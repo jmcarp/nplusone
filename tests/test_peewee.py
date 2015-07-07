@@ -2,7 +2,11 @@
 
 import pytest
 import peewee as pw
-from playhouse.shortcuts import ManyToManyField
+
+try:
+    from playhouse.fields import ManyToManyField
+except ImportError:
+    from playhouse.shortcuts import ManyToManyField
 
 from nplusone.core import signals
 import nplusone.ext.peewee  # noqa

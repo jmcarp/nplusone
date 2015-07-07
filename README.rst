@@ -3,15 +3,15 @@ nplusone
 ========
 
 .. image:: https://img.shields.io/pypi/v/nplusone.svg
-    :target: https://img.shields.io/pypi/v/nplusone.svg
+    :target: http://badge.fury.io/py/nplusone
     :alt: Latest version
 
 .. image:: https://img.shields.io/travis/jmcarp/nplusone/master.svg
-    :target: https://img.shields.io/travis/jmcarp/nplusone/master.svg
+    :target: https://travis-ci.org/jmcarp/nplusone
     :alt: Travis-CI
 
 .. image:: https://img.shields.io/codecov/c/github/jmcarp/nplusone/master.svg
-    :target: https://img.shields.io/codecov/c/github/jmcarp/nplusone/master.svg
+    :target: https://codecov.io/github/jmcarp/nplusone
     :alt: Code coverage
 
 nplusone is a library for detecting the n+1 queries problem in Python ORMs, including SQLAlchemy, Peewee, and the Django ORM.
@@ -41,6 +41,8 @@ Note: ``nplusone`` should only be used for development and should not be deploye
 
 Django
 ******
+
+Note: ``nplusone`` supports Django 1.7 and 1.8.
 
 Add ``nplusone`` to ``INSTALLED_APPS``: ::
 

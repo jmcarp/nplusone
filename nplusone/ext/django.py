@@ -57,6 +57,10 @@ def signalify_queryset(func, parser=None, **context):
     return wrapped
 
 
+def related_name(model):
+    return '{0}_set'.format(model._meta.model_name)
+
+
 def parse_single_related_queryset(args, kwargs, context):
     descriptor = context['args'][0]
     field = descriptor.related.field
@@ -69,13 +73,24 @@ def parse_reverse_single_related_queryset(args, kwargs, context):
 
 
 def parse_many_related_queryset(args, kwargs, context):
+    rel = context['rel']
     manager = context['args'][0]
-    return manager.instance.__class__, manager.prefetch_cache_name
+    model = manager.instance.__class__
+    related_model = manager.target_field.related_field.model
+    field = manager.prefetch_cache_name if rel.related_name else None
+    return (
+        model,
+        field or related_name(related_model),
+    )
 
 
 def parse_foreign_related_queryset(args, kwargs, context):
     field = context['rel_field']
-    return field.related_field.model, field.rel.related_name
+    related_model = context['rel_model']
+    return (
+        field.related_field.model,
+        field.rel.related_name or related_name(related_model),
+    )
 
 
 query.prefetch_one_level = signals.designalify(

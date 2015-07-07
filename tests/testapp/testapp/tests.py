@@ -22,6 +22,9 @@ def setup():
 @pytest.fixture
 def objects():
     user = models.User.objects.create()
+    pet = models.Pet.objects.create(user=user)
+    allergy = models.Allergy.objects.create()
+    allergy.pets.add(pet)
     occupation = models.Occupation.objects.create(user=user)
     address = models.Address.objects.create(user=user)
     hobby = models.Hobby.objects.create()
@@ -88,6 +91,14 @@ class TestManyToOne:
         assert call.objects == (models.User, 'addresses')
         assert 'user.addresses' in ''.join(call.frame[4])
 
+    def test_many_to_one_reverse_no_related_name(self, objects, calls):
+        user = models.User.objects.first()
+        user.pet_set.first()
+        assert len(calls) == 1
+        call = calls[0]
+        assert call.objects == (models.User, 'pet_set')
+        assert 'user.pet_set' in ''.join(call.frame[4])
+
 
 @pytest.mark.django_db
 class TestManyToMany:
@@ -140,6 +151,14 @@ class TestIntegration:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
+
+    def test_many_to_many_reverse_no_related_name(self, objects, calls):
+        pet = models.Pet.objects.first()
+        pet.allergy_set.first()
+        assert len(calls) == 1
+        call = calls[0]
+        assert call.objects == (models.Pet, 'allergy_set')
+        assert 'pet.allergy_set' in ''.join(call.frame[4])
 
     def test_eager_select(self, objects, client, logger):
         client.get('/eager_select/')

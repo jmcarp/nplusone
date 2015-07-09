@@ -12,15 +12,15 @@ env:
   global:
     - PYTHONPATH=tests/testapp
   matrix:
-    - DJANGO_VERSION=1.8.2
-    - DJANGO_VERSION=1.7.8
+    - DJANGO_VERSION=">=1.7,<1.8"
+    - DJANGO_VERSION=">=1.8,<1.9"
 
 before_install:
   - travis_retry pip install codecov
 
 install:
   - travis_retry pip install -U -r dev-requirements.txt
-  - travis_retry pip install -U django==$DJANGO_VERSION
+  - travis_retry pip install -U "django$DJANGO_VERSION"
   - travis_retry pip install -U .
 
 before_script:

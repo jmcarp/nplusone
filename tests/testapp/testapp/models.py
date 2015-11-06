@@ -5,6 +5,8 @@ from django.db import models
 
 class User(models.Model):
     hobbies = models.ManyToManyField('Hobby', related_name='users')
+    goods = models.ManyToManyField('Good', related_name='owners',
+                                   through='Purchase')
 
 
 class Pet(models.Model):
@@ -25,3 +27,13 @@ class Address(models.Model):
 
 class Hobby(models.Model):
     pass
+
+
+class Good(models.Model):
+    pass
+
+
+class Purchase(models.Model):
+    user = models.ForeignKey(User, related_name='purchases')
+    good = models.ForeignKey(Good)
+    purchased_at = models.DateTimeField(auto_now_add=True)

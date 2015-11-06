@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^one_to_one/$', views.one_to_one),
     url(r'^many_to_many/$', views.many_to_many),
+    url(r'^many_to_many_through/$', views.many_to_many_through),
     url(r'^eager_select/$', views.eager_select),
     url(r'^eager_prefetch/$', views.eager_prefetch),
     url(r'^eager_prefetch_item/$', views.eager_prefetch_item),

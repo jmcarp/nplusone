@@ -160,6 +160,9 @@ class TestIntegration:
         assert call.objects == (models.Pet, 'allergy_set')
         assert 'pet.allergy_set' in ''.join(call.frame[4])
 
+    def test_many_to_many_through(self, objects, client):
+        client.get('/many_to_many_through/')
+
     def test_eager_select(self, objects, client, logger):
         client.get('/eager_select/')
         assert not logger.log.called

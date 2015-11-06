@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from django.db.models import Prefetch
 from django.http import HttpResponse
 
 from . import models
@@ -13,6 +14,11 @@ def one_to_one(request):
 def many_to_many(request):
     users = models.User.objects.all()
     return HttpResponse(users[0].hobbies.all())
+
+
+def many_to_many_through(request):
+    users = models.User.objects.prefetch_related(Prefetch('purchases'))
+    return HttpResponse(users[0].purchases.all())
 
 
 def eager_prefetch(request):

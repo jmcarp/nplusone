@@ -186,7 +186,13 @@ def parse_iterate_queryset(args, kwargs, context):
     self = args[0]
     if hasattr(self, '_context'):
         manager = self._context['args'][0]
-        return manager.instance.__class__, manager.prefetch_cache_name
+        # Handle iteration over many-to-many relationship
+        if manager.__class__.__name__ == 'ManyRelatedManager':
+            return manager.instance.__class__, manager.prefetch_cache_name
+        # Handle iteration over one-to-many relationship
+        else:
+            related_field = self._context['rel_field']
+            return manager.instance.__class__, related_field.rel.related_name
 
 
 # Emit `touch` on iterating prefetched `QuerySet` instances

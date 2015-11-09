@@ -146,6 +146,10 @@ class TestIntegration:
         args = logger.log.call_args[0]
         assert 'Occupation.user' in args[1]
 
+    def test_one_to_many(self, objects, client, logger):
+        client.get('/one_to_many/')
+        assert not logger.log.called
+
     def test_many_to_many(self, objects, client, logger):
         client.get('/many_to_many/')
         assert len(logger.log.call_args_list) == 1
@@ -160,30 +164,36 @@ class TestIntegration:
         assert call.objects == (models.Pet, 'allergy_set')
         assert 'pet.allergy_set' in ''.join(call.frame[4])
 
-    def test_eager_select(self, objects, client, logger):
-        client.get('/eager_select/')
+    def test_prefetch_one_to_one(self, objects, client, logger):
+        client.get('/prefetch_one_to_one/')
         assert not logger.log.called
 
-    def test_eager_prefetch(self, objects, client, logger):
-        client.get('/eager_prefetch/')
-        assert not logger.log.called
-
-    def test_eager_prefetch_item(self, objects, client, logger):
-        client.get('/eager_prefetch_item/')
-        assert not logger.log.called
-
-    def test_eager_select_unused(self, objects, client, logger):
-        client.get('/eager_select_unused/')
+    def test_prefetch_one_to_one_unused(self, objects, client, logger):
+        client.get('/prefetch_one_to_one_unused/')
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.occupation' in args[1]
 
-    def test_eager_prefetch_scalar(self, objects, client, logger):
-        client.get('/eager_prefetch_scalar/')
+    def test_prefetch_many_to_many(self, objects, client, logger):
+        client.get('/prefetch_many_to_many/')
         assert not logger.log.called
 
-    def test_eager_prefetch_scalar_unused(self, objects, client, logger):
-        client.get('/eager_prefetch_scalar_unused/')
+    def test_prefetch_many_to_many_unused(self, objects, client, logger):
+        client.get('/prefetch_many_to_many_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'User.addresses' in args[1]
+
+    def test_prefetch_many_to_many_single(self, objects, client, logger):
+        client.get('/prefetch_many_to_many_single/')
+        assert not logger.log.called
+
+    def test_select_one_to_one(self, objects, client, logger):
+        client.get('/select_one_to_one/')
+        assert not logger.log.called
+
+    def test_select_one_to_one_unused(self, objects, client, logger):
+        client.get('/select_one_to_one_unused/')
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.occupation' in args[1]

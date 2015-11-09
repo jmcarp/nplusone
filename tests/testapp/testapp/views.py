@@ -10,36 +10,46 @@ def one_to_one(request):
     return HttpResponse(occupation.user.id)
 
 
+def one_to_many(request):
+    users = models.User.objects.all().prefetch_related('addresses')
+    return HttpResponse(users[0].addresses.all())
+
+
 def many_to_many(request):
     users = models.User.objects.all()
     return HttpResponse(users[0].hobbies.all())
 
 
-def eager_prefetch(request):
+def prefetch_one_to_one(request):
+    users = models.User.objects.all().select_related('occupation')
+    return HttpResponse(users[0].occupation)
+
+
+def prefetch_one_to_one_unused(request):
+    users = models.User.objects.all().prefetch_related('occupation')
+    return HttpResponse(users[0])
+
+
+def prefetch_many_to_many(request):
     users = models.User.objects.all().prefetch_related('hobbies')
     return HttpResponse(users[0].hobbies.all())
 
 
-def eager_prefetch_item(request):
+def prefetch_many_to_many_unused(request):
+    users = models.User.objects.all().prefetch_related('addresses')
+    return HttpResponse(users[0])
+
+
+def prefetch_many_to_many_single(request):
     users = models.User.objects.all().prefetch_related('hobbies')
     return HttpResponse(users[0].hobbies.all()[0])
 
 
-def eager_select(request):
+def select_one_to_one(request):
     users = models.User.objects.all().select_related('occupation')
     return HttpResponse(users[0].occupation)
 
 
-def eager_select_unused(request):
+def select_one_to_one_unused(request):
     users = models.User.objects.all().select_related('occupation')
-    return HttpResponse(users[0])
-
-
-def eager_prefetch_scalar(request):
-    users = models.User.objects.all().select_related('occupation')
-    return HttpResponse(users[0].occupation)
-
-
-def eager_prefetch_scalar_unused(request):
-    users = models.User.objects.all().prefetch_related('occupation')
     return HttpResponse(users[0])

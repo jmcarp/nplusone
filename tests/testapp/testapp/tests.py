@@ -6,6 +6,7 @@ import mock
 import pytest
 
 from django.conf import settings
+from django_webtest import DjangoTestApp
 
 from nplusone.ext.django import setup_state
 from tests.utils import calls  # noqa
@@ -17,6 +18,11 @@ from . import models
 @pytest.fixture(scope='module', autouse=True)
 def setup():
     setup_state()
+
+
+@pytest.fixture
+def client():
+    return DjangoTestApp()
 
 
 @pytest.fixture

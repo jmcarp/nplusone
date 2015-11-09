@@ -6,6 +6,7 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5"
   - "pypy"
 
 env:
@@ -14,6 +15,11 @@ env:
   matrix:
     - DJANGO_VERSION=">=1.7,<1.8"
     - DJANGO_VERSION=">=1.8,<1.9"
+
+matrix:
+  exclude:
+    - python: "3.5"
+      env: DJANGO_VERSION=">=1.7,<1.8"
 
 before_install:
   - travis_retry pip install codecov

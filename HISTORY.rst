@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.2.1 (2015-11-09)
+==================
+* Fix bug on iterating over Django one-to-many relationships. Thanks @orgkhnargh!
+
 0.2.0 (2015-07-07)
 ==================
 * Detect unused eager loads in SQLAlchemy and Django.

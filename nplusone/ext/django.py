@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import copy
-import logging
 import weakref
 import functools
 import threading
@@ -17,6 +16,7 @@ from django.db.models.fields import related
 
 from nplusone.core import signals
 from nplusone.core import listeners
+from nplusone.core import notifiers
 
 
 def get_worker():
@@ -224,8 +224,7 @@ query.QuerySet.__getitem__ = getitem_queryset
 class NPlusOneMiddleware(object):
 
     def __init__(self):
-        self.logger = getattr(settings, 'NPLUSONE_LOGGER', logging.getLogger('nplusone'))
-        self.level = getattr(settings, 'NPLUSONE_LOG_LEVEL', logging.DEBUG)
+        self.notifiers = notifiers.init(vars(settings._wrapped))
         self.listeners = weakref.WeakKeyDictionary()
 
     def process_request(self, request):
@@ -240,5 +239,6 @@ class NPlusOneMiddleware(object):
             listener.teardown()
         return response
 
-    def log(self, message):
-        self.logger.log(self.level, message)
+    def notify(self, message):
+        for notifier in self.notifiers:
+            notifier.notify(message)

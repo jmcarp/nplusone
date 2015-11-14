@@ -7,6 +7,7 @@ import webtest
 import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
+from nplusone.core import notifiers
 from nplusone.ext.flask_sqlalchemy import NPlusOne
 from nplusone.ext.flask_sqlalchemy import setup_state
 
@@ -38,10 +39,16 @@ def objects(db, app, models):
     db.session.close()
 
 
+@pytest.fixture
+def logger():
+    return mock.Mock()
+
+
 @pytest.yield_fixture
-def app(db, models):
+def app(db, models, logger):
     app = flask.Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['NPLUSONE_LOGGER'] = logger
     db.init_app(app)
     with app.app_context():
         db.create_all()
@@ -82,15 +89,8 @@ def routes(app, models):
 
 
 @pytest.fixture
-def client(app, routes):
+def client(app, routes, wrapper):
     return webtest.TestApp(app)
-
-
-@pytest.fixture
-def logger(wrapper, monkeypatch):
-    mock_logger = mock.Mock()
-    monkeypatch.setattr(wrapper, 'logger', mock_logger)
-    return mock_logger
 
 
 class TestNPlusOne:
@@ -122,3 +122,9 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
+
+    def test_many_to_many_raise(self, app, wrapper, objects, client, logger):
+        app.config['NPLUSONE_RAISE'] = True
+        wrapper.notifiers = notifiers.init(app.config)
+        res = client.get('/many_to_many/', expect_errors=True)
+        assert res.status_code == 500

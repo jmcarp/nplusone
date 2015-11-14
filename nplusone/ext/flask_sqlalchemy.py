@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 import six
 from flask import g
 from flask import request
 
 from nplusone.core import signals
 from nplusone.core import listeners
+from nplusone.core import notifiers
 import nplusone.ext.sqlalchemy  # noqa
 
 
@@ -27,9 +26,7 @@ class NPlusOne(object):
 
     def __init__(self, app):
         self.app = app
-        config = self.app.config
-        self.logger = config.get('NPLUSONE_LOGGER', logging.getLogger('nplusone'))
-        self.level = config.get('NPLUSONE_LOG_LEVEL', logging.DEBUG)
+        self.notifiers = notifiers.init(self.app.config)
         self.init_app()
 
     def init_app(self):
@@ -40,11 +37,13 @@ class NPlusOne(object):
                 g.listeners[name] = listener_type(self)
                 g.listeners[name].setup()
 
-        @self.app.teardown_request
-        def disconnect(error=None):
+        @self.app.after_request
+        def disconnect(response):
             for name, listener_type in six.iteritems(listeners.listeners):
                 listener = g.listeners.pop(name)
                 listener.teardown()
+            return response
 
-    def log(self, message):
-        self.logger.log(self.level, message)
+    def notify(self, message):
+        for notifier in self.notifiers:
+            notifier.notify(message)

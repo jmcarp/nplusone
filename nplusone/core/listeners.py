@@ -22,7 +22,7 @@ class LazyListener(Listener):
 
     def handle_lazy(self, caller, args=None, kwargs=None, context=None, parser=None):
         model, field = parser(args, kwargs, context)
-        self.parent.log(
+        self.parent.notify(
             'Potential n+1 query detected on `{0}.{1}`'.format(
                 model.__name__,
                 field,
@@ -51,7 +51,7 @@ class EagerListener(Listener):
 
     def log_eager(self):
         for model, field in self.touched:
-            self.parent.log(
+            self.parent.notify(
                 'Potential unnecessary eager load detected on `{0}.{1}`'.format(
                     model.__name__,
                     field,

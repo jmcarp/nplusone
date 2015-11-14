@@ -21,7 +21,7 @@ The Problem
 
 Many object-relational mapping (ORM) libraries default to lazy loading for relationships. This pattern can be efficient when related rows are rarely accessed, but quickly becomes inefficient as relationships are accessed more frequently. In these cases, loading related rows eagerly using a ``JOIN`` can be vastly more performant. Unfortunately, understanding when to use lazy versus eager loading can be challenging: you might not notice the problem until your app has slowed to a crawl.
 
-``nplusone`` is an ORM profiling tool to help diagnose and improve poor performance caused by inappropriate lazy loading. ``nplusone`` monitors applications using Django or SQLAlchemy and sends warnings when potentially expensive lazy loads are emitted. It can identify the offending relationship attribute and specific lines of code behind the problem, and recommend fixes for better performance.
+``nplusone`` is an ORM profiling tool to help diagnose and improve poor performance caused by inappropriate lazy loading. ``nplusone`` monitors applications using Django or SQLAlchemy and sends notifications when potentially expensive lazy loads are emitted. It can identify the offending relationship attribute and specific lines of code behind the problem, and recommend fixes for better performance.
 
 ``nplusone`` also detects inappropriate eager loading for Flask-SQLAlchemy and the Django ORM, emitting a warning when related data are eagerly loaded but never accessed within the current request.
 
@@ -80,7 +80,7 @@ Configure logging handlers: ::
         },
     }
 
-When your app loads data lazily, ``nplusone`` will emit a warning: ::
+When your app loads data lazily, ``nplusone`` will emit a log message: ::
 
     Potential n+1 query detected on `<model>.<field>`
 
@@ -108,7 +108,7 @@ Optionally configure logging settings: ::
     app.config['NPLUSONE_LOG_LEVEL'] = logging.ERROR
     NPlusOne(app)
 
-When your app loads data lazily, ``nplusone`` will emit a warning: ::
+When your app loads data lazily, ``nplusone`` will emit a log message: ::
 
     Potential n+1 query detected on `<model>.<field>`
 
@@ -117,6 +117,19 @@ Consider using ``subqueryload`` or ``joinedload`` in this case; see SQLAlchemy's
 When your app eagerly loads related data without accessing it, ``nplusone`` will log a warning: ::
 
     Potential unnecessary eager load detected on `<model>.<field>`
+
+Customizing notifications
+*************************
+
+By default, ``nplusone`` logs all potentially unnecessary queries using a logger named "nplusone". When the `NPLUSONE_RAISE` configuration option is set, ``nplusone`` will also raise an ``NPlusOneError``. This can be used to force all automated tests involving unnecessary queries to fail. ::
+
+    # Django config
+    NPLUSONE_RAISE = True
+
+    # Flask config
+    app.config['NPLUSONE_RAISE'] = True
+
+The exception type can also be specified, if desired, using the ``NPLUSONE_ERROR`` option.
 
 Ignoring Warnings
 *****************

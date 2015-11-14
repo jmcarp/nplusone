@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.3.0 (unreleased)
+==================
+* Optionally raise errors on potentially unnecessary queries.
+
 0.2.1 (2015-11-09)
 ==================
 * Fix bug on iterating over Django one-to-many relationships. Thanks @orgkhnargh!

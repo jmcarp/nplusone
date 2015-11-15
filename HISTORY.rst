@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.3.0 (unreleased)
+0.3.0 (2015-11-15)
 ==================
 * Optionally raise errors on potentially unnecessary queries.
 

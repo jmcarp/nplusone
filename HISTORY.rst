@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.4.0 (2015-11-17)
+==================
+* Support Django 1.9 beta.
+
 0.3.0 (2015-11-15)
 ==================
 * Optionally raise errors on potentially unnecessary queries.

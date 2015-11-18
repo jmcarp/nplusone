@@ -1,22 +1,31 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-
 import copy
-import weakref
+import inspect
 import functools
+import importlib
 import threading
 
-import six
-
-from django.conf import settings
+import django
 from django.db.models import query
 from django.db.models import query_utils
-from django.db.models.fields import related
 
 from nplusone.core import signals
-from nplusone.core import listeners
-from nplusone.core import notifiers
+
+if django.VERSION >= (1, 9):  # pragma: no cover
+    from django.db.models.fields.related_descriptors import (
+        ReverseOneToOneDescriptor,
+        ForwardManyToOneDescriptor,
+        create_reverse_many_to_one_manager,
+        create_forward_many_to_many_manager,
+    )
+else:  # pragma: no cover
+    from django.db.models.fields.related import (
+        SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor,
+        ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor,
+        create_foreign_related_manager as create_reverse_many_to_one_manager,
+        create_many_related_manager as create_forward_many_to_many_manager,
+    )
 
 
 def get_worker():
@@ -26,6 +35,11 @@ def get_worker():
 def setup_state():
     signals.get_worker = get_worker
 setup_state()
+
+
+def patch(original, patched):
+    module = importlib.import_module(original.__module__)
+    setattr(module, original.__name__, patched)
 
 
 def signalify_queryset(func, parser=None, **context):
@@ -57,17 +71,47 @@ def signalify_queryset(func, parser=None, **context):
     return wrapped
 
 
-def related_name(model):
+def get_related_name(model):
     return '{0}_set'.format(model._meta.model_name)
 
 
-def parse_single_related_queryset(args, kwargs, context):
+def parse_field(field):
+    return (
+        (
+            field.rel.model  # Django >= 1.8
+            if hasattr(field.rel, 'model')
+            else field.related_field.model  # Django <= 1.8
+        ),
+        field.rel.related_name,
+    )
+
+
+def parse_related(context):
+    if 'rel' in context:  # pragma: no cover
+        rel = context['rel']
+        return parse_related_parts(rel.model, rel.related_name, rel.related_model)
+    else:  # pragma: no cover
+        field = context['rel_field']
+        model = field.related_field.model
+        related_name = field.rel.related_name
+        related_model = context['rel_model']
+        return parse_related_parts(model, related_name, related_model)
+
+
+def parse_related_parts(model, related_name, related_model):
+    return (
+        model,
+        related_name or get_related_name(related_model),
+    )
+
+
+def parse_reverse_one_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
     field = descriptor.related.field
-    return field.related_field.model, field.rel.related_name
+    return parse_field(field)
 
 
-def parse_reverse_single_related_queryset(args, kwargs, context):
+def parse_forward_many_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
     return descriptor.field.model, descriptor.field.name
 
@@ -76,21 +120,20 @@ def parse_many_related_queryset(args, kwargs, context):
     rel = context['rel']
     manager = context['args'][0]
     model = manager.instance.__class__
-    related_model = manager.target_field.related_field.model
+    related_model = (
+        manager.target_field.related_model  # Django >= 1.8
+        if hasattr(manager.target_field, 'related_model')
+        else manager.target_field.related_field.model  # Django <= 1.8
+    )
     field = manager.prefetch_cache_name if rel.related_name else None
     return (
         model,
-        field or related_name(related_model),
+        field or get_related_name(related_model),
     )
 
 
 def parse_foreign_related_queryset(args, kwargs, context):
-    field = context['rel_field']
-    related_model = context['rel_model']
-    return (
-        field.related_field.model,
-        field.rel.related_name or related_name(related_model),
-    )
+    return parse_related(context)
 
 
 query.prefetch_one_level = signals.designalify(
@@ -99,39 +142,39 @@ query.prefetch_one_level = signals.designalify(
 )
 
 
-related.SingleRelatedObjectDescriptor.get_queryset = signalify_queryset(
-    related.SingleRelatedObjectDescriptor.get_queryset,
-    parser=parse_single_related_queryset,
+ReverseOneToOneDescriptor.get_queryset = signalify_queryset(
+    ReverseOneToOneDescriptor.get_queryset,
+    parser=parse_reverse_one_to_one_queryset,
 )
-related.ReverseSingleRelatedObjectDescriptor.get_queryset = signalify_queryset(
-    related.ReverseSingleRelatedObjectDescriptor.get_queryset,
-    parser=parse_reverse_single_related_queryset,
+ForwardManyToOneDescriptor.get_queryset = signalify_queryset(
+    ForwardManyToOneDescriptor.get_queryset,
+    parser=parse_forward_many_to_one_queryset,
 )
 
 
-original_create_many_related_manager = related.create_many_related_manager
-def create_many_related_manager(superclass, rel):
-    manager = original_create_many_related_manager(superclass, rel)
+def _create_forward_many_to_many_manager(*args, **kwargs):
+    context = inspect.getcallargs(create_forward_many_to_many_manager, *args, **kwargs)
+    manager = create_forward_many_to_many_manager(*args, **kwargs)
     manager.get_queryset = signalify_queryset(
         manager.get_queryset,
         parser=parse_many_related_queryset,
-        rel=rel,
+        **context
     )
     return manager
-related.create_many_related_manager = create_many_related_manager
+patch(create_forward_many_to_many_manager, _create_forward_many_to_many_manager)
 
 
-original_create_foreign_related_manager = related.create_foreign_related_manager
-def create_foreign_related_manager(superclass, rel_field, rel_model):
-    manager = original_create_foreign_related_manager(superclass, rel_field, rel_model)
+def _create_reverse_many_to_one_manager(*args, **kwargs):
+    context = inspect.getcallargs(create_reverse_many_to_one_manager, *args, **kwargs)
+    manager = create_reverse_many_to_one_manager(*args, **kwargs)
+
     manager.get_queryset = signalify_queryset(
         manager.get_queryset,
         parser=parse_foreign_related_queryset,
-        rel_field=rel_field,
-        rel_model=rel_model,
+        **context
     )
     return manager
-related.create_foreign_related_manager = create_foreign_related_manager
+patch(create_reverse_many_to_one_manager, _create_reverse_many_to_one_manager)
 
 
 def parse_get_prefetcher(args, kwargs, context):
@@ -141,7 +184,7 @@ def parse_get_prefetcher(args, kwargs, context):
 
 def parse_select_related(args, kwargs, context):
     field = args[0]
-    return field.related_field.model, field.rel.related_name
+    return parse_field(field)
 
 
 query.get_prefetcher = signals.signalify(
@@ -167,18 +210,18 @@ def select_related_descend(*args, **kwargs):
 query_utils.select_related_descend = select_related_descend
 
 
-def parse_single_related_get(args, kwargs, context):
+def parse_reverse_one_to_one_get(args, kwargs, context):
     descriptor, instance = args[:2]
     if instance is None:
         return None
     field = descriptor.related.field
-    return field.related_field.model, field.rel.related_name
+    return parse_field(field)
 
 
-related.SingleRelatedObjectDescriptor.__get__ = signals.signalify(
+ReverseOneToOneDescriptor.__get__ = signals.signalify(
     signals.touch,
-    related.SingleRelatedObjectDescriptor.__get__,
-    parser=parse_single_related_get,
+    ReverseOneToOneDescriptor.__get__,
+    parser=parse_reverse_one_to_one_get,
 )
 
 
@@ -191,8 +234,7 @@ def parse_iterate_queryset(args, kwargs, context):
             return manager.instance.__class__, manager.prefetch_cache_name
         # Handle iteration over one-to-many relationship
         else:
-            related_field = self._context['rel_field']
-            return manager.instance.__class__, related_field.rel.related_name
+            return parse_related(self._context)
 
 
 # Emit `touch` on iterating prefetched `QuerySet` instances
@@ -219,26 +261,3 @@ def getitem_queryset(self, index):
         )
     return original_getitem_queryset(self, index)
 query.QuerySet.__getitem__ = getitem_queryset
-
-
-class NPlusOneMiddleware(object):
-
-    def __init__(self):
-        self.notifiers = notifiers.init(vars(settings._wrapped))
-        self.listeners = weakref.WeakKeyDictionary()
-
-    def process_request(self, request):
-        self.listeners[request] = self.listeners.get(request, {})
-        for name, listener_type in six.iteritems(listeners.listeners):
-            self.listeners[request][name] = listener_type(self)
-            self.listeners[request][name].setup()
-
-    def process_response(self, request, response):
-        for name, listener_type in six.iteritems(listeners.listeners):
-            listener = self.listeners[request].pop(name)
-            listener.teardown()
-        return response
-
-    def notify(self, message):
-        for notifier in self.notifiers:
-            notifier.notify(message)

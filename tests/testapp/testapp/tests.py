@@ -8,7 +8,7 @@ import pytest
 from django.conf import settings
 from django_webtest import DjangoTestApp
 
-from nplusone.ext.django import setup_state
+from nplusone.ext.django.patch import setup_state
 from tests.utils import calls  # noqa
 pytest.yield_fixture(calls)
 

@@ -54,8 +54,8 @@ Add ``nplusone`` to ``INSTALLED_APPS``: ::
 Add ``NPlusOneMiddleware``: ::
 
     MIDDLEWARE_CLASSES = (
-        ...
         'nplusone.ext.django.NPlusOneMiddleware',
+        ...
     )
 
 Optionally configure logging settings: ::

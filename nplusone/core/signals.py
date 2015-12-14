@@ -6,6 +6,7 @@ import contextlib
 import blinker
 
 
+load = blinker.Signal()
 lazy_load = blinker.Signal()
 eager_load = blinker.Signal()
 touch = blinker.Signal()

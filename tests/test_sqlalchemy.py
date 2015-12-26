@@ -43,7 +43,7 @@ class TestManyToOne:
         users[0].addresses
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, users[0], 'addresses')
+        assert call.objects == (models.User, 'User:1', 'addresses')
         assert 'users[0].addresses' in ''.join(call.frame[4])
 
     def test_many_to_one_ignore(self, session, objects, calls):
@@ -71,7 +71,7 @@ class TestManyToOne:
         addresses[0].user
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Address, addresses[0], 'user')
+        assert call.objects == (models.Address, 'Address:1', 'user')
         assert 'addresses[0].user' in ''.join(call.frame[4])
 
     def test_many_to_one_reverse_subquery(self, session, objects, calls):
@@ -96,7 +96,7 @@ class TestManyToMany:
         users[0].hobbies
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, users[0], 'hobbies')
+        assert call.objects == (models.User, 'User:1', 'hobbies')
         assert 'users[0].hobbies' in ''.join(call.frame[4])
 
     def test_many_to_many_subquery(self, session, objects, calls):
@@ -114,7 +114,7 @@ class TestManyToMany:
         hobbies[0].users
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Hobby, hobbies[0], 'users')
+        assert call.objects == (models.Hobby, 'Hobby:1', 'users')
         assert 'hobbies[0].users' in ''.join(call.frame[4])
 
     def test_many_to_many_reverse_subquery(self, session, objects, calls):

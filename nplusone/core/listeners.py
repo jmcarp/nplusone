@@ -24,7 +24,7 @@ class LazyListener(Listener):
 
     def handle_load(self, caller, args=None, kwargs=None, context=None, ret=None,
                     parser=None):
-        model, instances = parser(args, kwargs, context, ret)
+        instances = parser(args, kwargs, context, ret)
         self.loaded.update(instances)
 
     def handle_lazy(self, caller, args=None, kwargs=None, context=None, parser=None):

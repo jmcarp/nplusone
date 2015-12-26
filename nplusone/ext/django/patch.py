@@ -38,6 +38,11 @@ def setup_state():
 setup_state()
 
 
+def to_key(instance):
+    model = type(instance)
+    return ':'.join([model.__name__, format(instance.pk)])
+
+
 def patch(original, patched):
     module = importlib.import_module(original.__module__)
     setattr(module, original.__name__, patched)
@@ -110,12 +115,14 @@ def parse_reverse_one_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
     field = descriptor.related.field
     model, name = parse_field(field)
-    return model, context['kwargs']['instance'], name
+    instance = context['kwargs']['instance']
+    return model, to_key(instance), name
 
 
 def parse_forward_many_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
-    return descriptor.field.model, context['kwargs']['instance'], descriptor.field.name
+    instance = context['kwargs']['instance']
+    return descriptor.field.model, to_key(instance), descriptor.field.name
 
 
 def parse_many_related_queryset(args, kwargs, context):
@@ -130,7 +137,7 @@ def parse_many_related_queryset(args, kwargs, context):
     field = manager.prefetch_cache_name if rel.related_name else None
     return (
         model,
-        manager.instance,
+        to_key(manager.instance),
         field or get_related_name(related_model),
     )
 
@@ -138,7 +145,7 @@ def parse_many_related_queryset(args, kwargs, context):
 def parse_foreign_related_queryset(args, kwargs, context):
     model, name = parse_related(context)
     descriptor = context['args'][0]
-    return model, descriptor.instance, name
+    return model, to_key(descriptor.instance), name
 
 
 query.prefetch_one_level = signals.designalify(
@@ -243,8 +250,7 @@ def parse_iterate_queryset(args, kwargs, context):
 
 
 def parse_load(args, kwargs, context, ret):
-    model = type(ret[0]) if ret else None
-    return model, ret
+    return [to_key(row) for row in ret]
 
 
 def is_single(low, high):

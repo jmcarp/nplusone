@@ -11,14 +11,25 @@ from sqlalchemy.orm import strategies
 from nplusone.core import signals
 
 
+def to_key(instance):
+    model = type(instance)
+    columns = model.__table__.primary_key.columns
+    return ':'.join(
+        [model.__name__] +
+        [format(getattr(instance, column.key)) for column in columns]
+    )
+
+
 def parse_load(args, kwargs, context, ret):
-    model = type(ret[0]) if ret else None
-    return model, ret
+    return [
+        to_key(row) for row in ret
+        if hasattr(row, '__table__')
+    ]
 
 
 def parse_lazy_load(args, kwargs, context):
     loader, state, _ = args
-    return loader.parent.class_, state.object, loader.parent_property.key
+    return loader.parent.class_, to_key(state.object), loader.parent_property.key
 
 
 def parse_eager_load(args, kwargs, context):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import mock
 import pytest
 import peewee as pw
 
@@ -9,6 +10,7 @@ except ImportError:
     from playhouse.shortcuts import ManyToManyField
 
 from nplusone.core import signals
+from nplusone.core import listeners
 import nplusone.ext.peewee  # noqa
 
 from tests.utils import calls, Bunch  # noqa
@@ -75,15 +77,36 @@ def objects(models, session):
     )
 
 
+@pytest.yield_fixture
+def lazy_listener():
+    mock_parent = mock.Mock()
+    listener = listeners.LazyListener(mock_parent)
+    listener.setup()
+    try:
+        yield listener
+    finally:
+        listener.teardown()
+
+
 class TestManyToOne:
 
-    def test_many_to_one(self, models, session, objects, calls):
-        user = models.User.select().first()
+    def test_many_to_one(self, models, session, objects, calls, lazy_listener):
+        users = list(models.User.select())
+        users[0].addresses
+        assert len(calls) == 1
+        call = calls[0]
+        assert call.objects == (models.User, 'User:1', 'addresses')
+        assert 'users[0].addresses' in ''.join(call.frame[4])
+        assert lazy_listener.parent.notify
+
+    def test_many_to_one_get(self, models, session, objects, calls, lazy_listener):
+        user = models.User.get()
         user.addresses
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, 'addresses')
+        assert call.objects == (models.User, 'User:1', 'addresses')
         assert 'user.addresses' in ''.join(call.frame[4])
+        assert not lazy_listener.parent.notify.called
 
     def test_many_to_one_ignore(self, models, session, objects, calls):
         user = models.User.select().first()
@@ -106,7 +129,7 @@ class TestManyToOne:
         address.user
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Address, 'user')
+        assert call.objects == (models.Address, 'Address:1', 'user')
         assert 'address.user' in ''.join(call.frame[4])
 
     def test_many_to_one_reverse_join(self, models, session, objects, calls):
@@ -130,17 +153,17 @@ class TestManyToOne:
 class TestManyToMany:
 
     def test_many_to_many(self, models, session, objects, calls):
-        user = models.User.select().first()
-        list(user.hobbies)
+        users = models.User.select()
+        list(users[0].hobbies)
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, 'hobbies')
-        assert 'user.hobbies' in ''.join(call.frame[4])
+        assert call.objects == (models.User, 'User:1', 'hobbies')
+        assert 'users[0].hobbies' in ''.join(call.frame[4])
 
     def test_many_to_many_reverse(self, models, session, objects, calls):
         hobby = models.Hobby.select().first()
         list(hobby.users)
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Hobby, 'users')
+        assert call.objects == (models.Hobby, 'Hobby:1', 'users')
         assert 'hobby.users' in ''.join(call.frame[4])

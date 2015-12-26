@@ -6,6 +6,11 @@ from . import models
 
 
 def one_to_one(request):
+    occupations = list(models.Occupation.objects.all())
+    return HttpResponse(occupations[0].user.id)
+
+
+def one_to_one_first(request):
     occupation = models.Occupation.objects.first()
     return HttpResponse(occupation.user.id)
 
@@ -16,7 +21,7 @@ def one_to_many(request):
 
 
 def many_to_many(request):
-    users = models.User.objects.all()
+    users = list(models.User.objects.all())
     return HttpResponse(users[0].hobbies.all())
 
 

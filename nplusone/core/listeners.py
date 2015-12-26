@@ -18,16 +18,24 @@ class Listener(object):
 class LazyListener(Listener):
 
     def setup(self):
+        self.loaded = set()
+        signals.load.connect(self.handle_load, sender=signals.get_worker())
         signals.lazy_load.connect(self.handle_lazy, sender=signals.get_worker())
 
+    def handle_load(self, caller, args=None, kwargs=None, context=None, ret=None,
+                    parser=None):
+        instances = parser(args, kwargs, context, ret)
+        self.loaded.update(instances)
+
     def handle_lazy(self, caller, args=None, kwargs=None, context=None, parser=None):
-        model, field = parser(args, kwargs, context)
-        self.parent.notify(
-            'Potential n+1 query detected on `{0}.{1}`'.format(
-                model.__name__,
-                field,
-            ),
-        )
+        model, instance, field = parser(args, kwargs, context)
+        if instance in self.loaded:
+            self.parent.notify(
+                'Potential n+1 query detected on `{0}.{1}`'.format(
+                    model.__name__,
+                    field,
+                ),
+            )
 
 
 class EagerListener(Listener):

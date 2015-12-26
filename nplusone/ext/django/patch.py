@@ -4,6 +4,7 @@ import copy
 import inspect
 import functools
 import importlib
+import itertools
 import threading
 
 import django
@@ -35,6 +36,11 @@ def get_worker():
 def setup_state():
     signals.get_worker = get_worker
 setup_state()
+
+
+def to_key(instance):
+    model = type(instance)
+    return ':'.join([model.__name__, format(instance.pk)])
 
 
 def patch(original, patched):
@@ -108,12 +114,15 @@ def parse_related_parts(model, related_name, related_model):
 def parse_reverse_one_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
     field = descriptor.related.field
-    return parse_field(field)
+    model, name = parse_field(field)
+    instance = context['kwargs']['instance']
+    return model, to_key(instance), name
 
 
 def parse_forward_many_to_one_queryset(args, kwargs, context):
     descriptor = context['args'][0]
-    return descriptor.field.model, descriptor.field.name
+    instance = context['kwargs']['instance']
+    return descriptor.field.model, to_key(instance), descriptor.field.name
 
 
 def parse_many_related_queryset(args, kwargs, context):
@@ -128,12 +137,15 @@ def parse_many_related_queryset(args, kwargs, context):
     field = manager.prefetch_cache_name if rel.related_name else None
     return (
         model,
+        to_key(manager.instance),
         field or get_related_name(related_model),
     )
 
 
 def parse_foreign_related_queryset(args, kwargs, context):
-    return parse_related(context)
+    model, name = parse_related(context)
+    descriptor = context['args'][0]
+    return model, to_key(descriptor.instance), name
 
 
 query.prefetch_one_level = signals.designalify(
@@ -237,6 +249,14 @@ def parse_iterate_queryset(args, kwargs, context):
             return parse_related(self._context)
 
 
+def parse_load(args, kwargs, context, ret):
+    return [to_key(row) for row in ret]
+
+
+def is_single(low, high):
+    return high is not None and high - low == 1
+
+
 # Emit `touch` on iterating prefetched `QuerySet` instances
 original_iterate_queryset = query.QuerySet.__iter__
 def iterate_queryset(self):
@@ -246,7 +266,15 @@ def iterate_queryset(self):
             args=(self, ),
             parser=parse_iterate_queryset,
         )
-    return original_iterate_queryset(self)
+    ret, clone = itertools.tee(original_iterate_queryset(self))
+    if not is_single(self.query.low_mark, self.query.high_mark):
+        signals.load.send(
+            get_worker(),
+            args=(self, ),
+            ret=list(clone),
+            parser=parse_load,
+        )
+    return ret
 query.QuerySet.__iter__ = iterate_queryset
 
 

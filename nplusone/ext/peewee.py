@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+from peewee import SelectQuery
 from peewee import RelationDescriptor
 from peewee import ReverseRelationDescriptor
 
@@ -14,20 +15,24 @@ from nplusone.core import signals
 
 
 def parse_get_object(args, kwargs, context):
-    descriptor = args[0]
-    return descriptor.field.model_class, descriptor.field.name
+    descriptor, instance = args
+    return descriptor.field.model_class, to_key(instance), descriptor.field.name
 
 
 def parse_reverse_get(args, kwargs, context):
-    descriptor = args[0]
-    return descriptor.field.rel_model, descriptor.field.related_name
+    descriptor, instance = args
+    return descriptor.field.rel_model, to_key(instance), descriptor.field.related_name
 
 
 def get_object_or_id(self, instance):
     rel_id = instance._data.get(self.att_name)
     if rel_id is not None or self.att_name in instance._obj_cache:
         if self.att_name not in instance._obj_cache:
-            signals.lazy_load.send(None, args=(self, instance), parser=parse_get_object)
+            signals.lazy_load.send(
+                signals.get_worker(),
+                args=(self, instance),
+                parser=parse_get_object,
+            )
             obj = self.rel_model.get(self.field.to_field == rel_id)
             instance._obj_cache[self.att_name] = obj
         return instance._obj_cache[self.att_name]
@@ -40,7 +45,7 @@ RelationDescriptor.get_object_or_id = get_object_or_id
 def reverse_get(self, instance, instance_type=None):
     if instance is not None:
         signals.lazy_load.send(
-            None,
+            signals.get_worker(),
             args=(self, instance),
             kwargs={'instance_type': instance_type},
             parser=parse_reverse_get,
@@ -54,7 +59,7 @@ ReverseRelationDescriptor.__get__ = reverse_get
 def reverse_get_many(self, instance, instance_type=None):
     if instance is not None:
         signals.lazy_load.send(
-            None,
+            signals.get_worker(),
             args=(self, instance),
             kwargs={'instance_type': instance_type},
             parser=parse_get_object,
@@ -66,3 +71,30 @@ def reverse_get_many(self, instance, instance_type=None):
                 .where(self.src_fk == instance))
     return self.field
 fields.ManyToManyFieldDescriptor.__get__ = reverse_get_many
+
+
+def to_key(instance):
+    model = type(instance)
+    return ':'.join([model.__name__, format(instance.get_id())])
+
+
+def parse_load(args, kwargs, context, ret):
+    return [to_key(row) for row in ret]
+
+
+def is_single(offset, limit):
+    return limit is not None and limit - (offset or 0) == 1
+
+
+original_query_execute = SelectQuery.execute
+def query_execute(self):
+    ret = original_query_execute(self)
+    if not is_single(self._offset, self._limit):
+        signals.load.send(
+            signals.get_worker(),
+            args=(self, ),
+            ret=list(ret),
+            parser=parse_load,
+        )
+    return ret
+SelectQuery.execute = query_execute

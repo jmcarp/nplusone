@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
 from nplusone.core import notifiers
+from nplusone.core import exceptions
 from nplusone.ext.flask_sqlalchemy import NPlusOne
 from nplusone.ext.flask_sqlalchemy import setup_state
 
@@ -47,6 +48,7 @@ def logger():
 @pytest.yield_fixture
 def app(db, models, logger):
     app = flask.Flask(__name__)
+    app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['NPLUSONE_LOGGER'] = logger
     db.init_app(app)
@@ -64,28 +66,33 @@ def wrapper(app):
 def routes(app, models):
     @app.route('/many_to_one/')
     def many_to_one():
+        users = models.User.query.all()
+        return str(users[0].addresses)
+
+    @app.route('/many_to_one_first/')
+    def many_to_one_first():
         user = models.User.query.first()
         return str(user.addresses)
 
     @app.route('/many_to_many/')
     def many_to_many():
-        user = models.User.query.first()
-        return str(user.hobbies)
+        users = models.User.query.all()
+        return str(users[0].hobbies)
 
     @app.route('/eager/')
     def eager():
-        user = models.User.query.options(sa.orm.subqueryload('hobbies')).first()
-        return str(user.hobbies)
+        users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
+        return str(users[0].hobbies)
 
     @app.route('/eager_join_unused/')
     def eager_join_unused():
-        user = models.User.query.options(sa.orm.joinedload('hobbies')).first()
-        return str(user)
+        users = models.User.query.options(sa.orm.joinedload('hobbies')).all()
+        return str(users[0])
 
     @app.route('/eager_subquery_unused/')
     def eager_subquery_unused():
-        user = models.User.query.options(sa.orm.subqueryload('hobbies')).first()
-        return str(user)
+        users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
+        return str(users[0])
 
 
 @pytest.fixture
@@ -100,6 +107,10 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.addresses' in args[1]
+
+    def test_many_to_one_first(self, objects, client, logger):
+        client.get('/many_to_one_first/')
+        assert not logger.log.called
 
     def test_many_to_many(self, objects, client, logger):
         client.get('/many_to_many/')
@@ -126,5 +137,5 @@ class TestNPlusOne:
     def test_many_to_many_raise(self, app, wrapper, objects, client, logger):
         app.config['NPLUSONE_RAISE'] = True
         wrapper.notifiers = notifiers.init(app.config)
-        res = client.get('/many_to_many/', expect_errors=True)
-        assert res.status_code == 500
+        with pytest.raises(exceptions.NPlusOneError):
+            client.get('/many_to_many/')

@@ -21,6 +21,7 @@ from . import views
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^one_to_one/$', views.one_to_one),
+    url(r'^one_to_one_first/$', views.one_to_one_first),
     url(r'^one_to_many/$', views.one_to_many),
     url(r'^many_to_many/$', views.many_to_many),
     url(r'^prefetch_one_to_one/$', views.prefetch_one_to_one),

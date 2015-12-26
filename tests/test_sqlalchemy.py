@@ -39,48 +39,48 @@ def objects(session):
 class TestManyToOne:
 
     def test_many_to_one(self, session, objects, calls):
-        user = session.query(models.User).first()
-        user.addresses
+        users = session.query(models.User).all()
+        users[0].addresses
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, 'addresses')
-        assert 'user.addresses' in ''.join(call.frame[4])
+        assert call.objects == (models.User, 'User:1', 'addresses')
+        assert 'users[0].addresses' in ''.join(call.frame[4])
 
     def test_many_to_one_ignore(self, session, objects, calls):
-        user = session.query(models.User).first()
+        users = session.query(models.User).all()
         with signals.ignore(signals.lazy_load):
-            user.addresses
+            users[0].addresses
         assert len(calls) == 0
 
     def test_many_to_one_subquery(self, session, objects, calls):
-        user = session.query(
+        users = session.query(
             models.User
         ).options(
             sa.orm.subqueryload('addresses')
-        ).first()
-        user.addresses
+        ).all()
+        users[0].addresses
         assert len(calls) == 0
 
     def test_many_to_one_joined(self, session, objects, calls):
-        user = session.query(models.User).options(sa.orm.joinedload('addresses')).first()
-        user.addresses
+        users = session.query(models.User).options(sa.orm.joinedload('addresses')).all()
+        users[0].addresses
         assert len(calls) == 0
 
     def test_many_to_one_reverse(self, session, objects, calls):
-        address = session.query(models.Address).first()
-        address.user
+        addresses = session.query(models.Address).all()
+        addresses[0].user
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Address, 'user')
-        assert 'address.user' in ''.join(call.frame[4])
+        assert call.objects == (models.Address, 'Address:1', 'user')
+        assert 'addresses[0].user' in ''.join(call.frame[4])
 
     def test_many_to_one_reverse_subquery(self, session, objects, calls):
-        address = session.query(
+        addresses = session.query(
             models.Address
         ).options(
             sa.orm.subqueryload('user')
-        ).first()
-        address.user
+        ).all()
+        addresses[0].user
         assert len(calls) == 0
 
     def test_many_to_one_reverse_joined(self, session, objects, calls):
@@ -92,12 +92,12 @@ class TestManyToOne:
 class TestManyToMany:
 
     def test_many_to_many(self, session, objects, calls):
-        user = session.query(models.User).first()
-        user.hobbies
+        users = session.query(models.User).all()
+        users[0].hobbies
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.User, 'hobbies')
-        assert 'user.hobbies' in ''.join(call.frame[4])
+        assert call.objects == (models.User, 'User:1', 'hobbies')
+        assert 'users[0].hobbies' in ''.join(call.frame[4])
 
     def test_many_to_many_subquery(self, session, objects, calls):
         user = session.query(models.User).options(sa.orm.subqueryload('hobbies')).first()
@@ -110,12 +110,12 @@ class TestManyToMany:
         assert len(calls) == 0
 
     def test_many_to_many_reverse(self, session, objects, calls):
-        hobby = session.query(models.Hobby).first()
-        hobby.users
+        hobbies = session.query(models.Hobby).all()
+        hobbies[0].users
         assert len(calls) == 1
         call = calls[0]
-        assert call.objects == (models.Hobby, 'users')
-        assert 'hobby.users' in ''.join(call.frame[4])
+        assert call.objects == (models.Hobby, 'Hobby:1', 'users')
+        assert 'hobbies[0].users' in ''.join(call.frame[4])
 
     def test_many_to_many_reverse_subquery(self, session, objects, calls):
         hobby = session.query(models.Hobby).options(sa.orm.subqueryload('users')).first()

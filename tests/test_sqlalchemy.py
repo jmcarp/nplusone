@@ -32,7 +32,6 @@ def objects(session):
     address = models.Address()
     user = models.User(addresses=[address], hobbies=[hobby])
     session.add(user)
-    session.add(models.User())
     session.commit()
     session.close()
 

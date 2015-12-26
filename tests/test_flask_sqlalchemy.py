@@ -36,9 +36,6 @@ def objects(db, app, models):
     address = models.Address()
     user = models.User(addresses=[address], hobbies=[hobby])
     db.session.add(user)
-    db.session.add(models.User())
-    db.session.add(models.Hobby())
-    db.session.add(models.Address())
     db.session.commit()
     db.session.close()
 
@@ -71,6 +68,11 @@ def routes(app, models):
     def many_to_one():
         users = models.User.query.all()
         return str(users[0].addresses)
+
+    @app.route('/many_to_one_first/')
+    def many_to_one_first():
+        user = models.User.query.first()
+        return str(user.addresses)
 
     @app.route('/many_to_many/')
     def many_to_many():
@@ -105,6 +107,10 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.addresses' in args[1]
+
+    def test_many_to_one_first(self, objects, client, logger):
+        client.get('/many_to_one_first/')
+        assert not logger.log.called
 
     def test_many_to_many(self, objects, client, logger):
         client.get('/many_to_many/')

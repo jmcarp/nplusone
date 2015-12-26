@@ -59,14 +59,19 @@ attributes.InstrumentedAttribute.__get__ = signals.signalify(
 )
 
 
+def is_single(offset, limit):
+    return limit is not None and limit - (offset or 0) == 1
+
+
 original_query_iter = query.Query.__iter__
 def query_iter(self):
     ret, clone = itertools.tee(original_query_iter(self))
-    signals.load.send(
-        signals.get_worker(),
-        args=(self, ),
-        ret=list(clone),
-        parser=parse_load,
-    )
+    if not is_single(self._offset, self._limit):
+        signals.load.send(
+            signals.get_worker(),
+            args=(self, ),
+            ret=list(clone),
+            parser=parse_load,
+        )
     return ret
 query.Query.__iter__ = query_iter

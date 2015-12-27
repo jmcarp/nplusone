@@ -31,4 +31,6 @@ urlpatterns = [
     url(r'^prefetch_many_to_many_single/$', views.prefetch_many_to_many_single),
     url(r'^select_one_to_one/$', views.select_one_to_one),
     url(r'^select_one_to_one_unused/$', views.select_one_to_one_unused),
+    url(r'^select_many_to_one/$', views.select_many_to_one),
+    url(r'^select_many_to_one_unused/$', views.select_many_to_one_unused),
 ]

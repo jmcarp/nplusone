@@ -58,3 +58,13 @@ def select_one_to_one(request):
 def select_one_to_one_unused(request):
     users = models.User.objects.all().select_related('occupation')
     return HttpResponse(users[0])
+
+
+def select_many_to_one(request):
+    pets = models.Pet.objects.all().select_related('user')
+    return HttpResponse(pets[0].user)
+
+
+def select_many_to_one_unused(request):
+    pets = models.Pet.objects.all().select_related('user')
+    return HttpResponse(pets[0])

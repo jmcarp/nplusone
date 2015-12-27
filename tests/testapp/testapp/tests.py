@@ -207,3 +207,13 @@ class TestIntegration:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.occupation' in args[1]
+
+    def test_select_many_to_one(self, objects, client, logger):
+        client.get('/select_many_to_one/')
+        assert not logger.log.called
+
+    def test_select_many_to_one_unused(self, objects, client, logger):
+        client.get('/select_many_to_one_unused/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'Pet.user' in args[1]

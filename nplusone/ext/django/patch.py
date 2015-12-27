@@ -10,6 +10,7 @@ import threading
 import django
 from django.db.models import query
 from django.db.models import query_utils
+from django.db.models.fields import related
 from django.db.models import Model
 
 from nplusone.core import signals
@@ -91,6 +92,10 @@ def parse_field(field):
         ),
         field.rel.related_name,
     )
+
+
+def parse_reverse_field(field):
+    return field.model, field.name
 
 
 def parse_related(context):
@@ -197,7 +202,9 @@ def parse_get_prefetcher(args, kwargs, context):
 
 def parse_select_related(args, kwargs, context):
     field = args[0]
-    return parse_field(field)
+    if isinstance(field, related.OneToOneField):
+        return parse_field(field)
+    return parse_reverse_field(field)
 
 
 query.get_prefetcher = signals.signalify(
@@ -221,6 +228,19 @@ def select_related_descend(*args, **kwargs):
         )
     return ret
 query_utils.select_related_descend = select_related_descend
+
+
+def parse_forward_many_to_one_get(args, kwargs, context):
+    descriptor = args[0]
+    field = descriptor.field
+    return parse_reverse_field(field)
+
+
+ForwardManyToOneDescriptor.__get__ = signals.signalify(
+    signals.touch,
+    ForwardManyToOneDescriptor.__get__,
+    parser=parse_forward_many_to_one_get,
+)
 
 
 def parse_reverse_one_to_one_get(args, kwargs, context):

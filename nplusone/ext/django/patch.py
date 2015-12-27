@@ -10,6 +10,7 @@ import threading
 import django
 from django.db.models import query
 from django.db.models import query_utils
+from django.db.models import Model
 
 from nplusone.core import signals
 
@@ -250,7 +251,11 @@ def parse_iterate_queryset(args, kwargs, context):
 
 
 def parse_load(args, kwargs, context, ret):
-    return [to_key(row) for row in ret]
+    return [
+        to_key(row)
+        for row in ret
+        if isinstance(row, Model)
+    ]
 
 
 def is_single(low, high):

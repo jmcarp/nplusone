@@ -8,8 +8,6 @@ from nplusone.core import signals
 import nplusone.ext.sqlalchemy  # noqa
 
 from tests import utils
-from tests.utils import calls  # noqa
-pytest.yield_fixture(calls)
 
 
 Base = declarative_base()
@@ -126,3 +124,7 @@ class TestManyToMany:
         hobby = session.query(models.Hobby).options(sa.orm.joinedload('users')).first()
         hobby.users
         assert len(calls) == 0
+
+
+def test_non_orm_query(session, objects, lazy_listener):
+    session.query(models.Address.id).all()

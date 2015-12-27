@@ -1,33 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import collections
-
-import pytest
 import sqlalchemy as sa
-
-from nplusone.core import stack
-from nplusone.core import signals
-
-
-Call = collections.namedtuple('Call', ['objects', 'frame'])
-PATTERNS = [
-    'site-packages', 'py.test',
-    'nplusone/core', 'nplusone/ext', 'nplusone/tests/utils',
-]
-
-
-@pytest.yield_fixture
-def calls():
-    calls = []
-    def subscriber(sender, args=None, kwargs=None, context=None, parser=None):
-        calls.append(
-            Call(
-                parser(args, kwargs, context),
-                stack.get_caller(patterns=PATTERNS)
-            )
-        )
-    signals.lazy_load.connect(subscriber, sender=signals.get_worker())
-    yield calls
 
 
 class Bunch(object):

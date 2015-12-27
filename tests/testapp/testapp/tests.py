@@ -9,8 +9,6 @@ from django.conf import settings
 from django_webtest import DjangoTestApp
 
 from nplusone.ext.django.patch import setup_state
-from tests.utils import calls  # noqa
-pytest.yield_fixture(calls)
 
 from . import models
 
@@ -217,3 +215,8 @@ class TestIntegration:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'Pet.user' in args[1]
+
+
+@pytest.mark.django_db
+def test_values(objects, lazy_listener):
+    list(models.User.objects.values('id'))

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import mock
 import pytest
 import peewee as pw
 
@@ -10,11 +9,9 @@ except ImportError:
     from playhouse.shortcuts import ManyToManyField
 
 from nplusone.core import signals
-from nplusone.core import listeners
 import nplusone.ext.peewee  # noqa
 
-from tests.utils import calls, Bunch  # noqa
-pytest.yield_fixture(calls)
+from tests.utils import Bunch
 
 
 @pytest.fixture
@@ -75,17 +72,6 @@ def objects(models, session):
         hobby=hobby,
         address=address,
     )
-
-
-@pytest.yield_fixture
-def lazy_listener():
-    mock_parent = mock.Mock()
-    listener = listeners.LazyListener(mock_parent)
-    listener.setup()
-    try:
-        yield listener
-    finally:
-        listener.teardown()
 
 
 class TestManyToOne:

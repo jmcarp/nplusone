@@ -10,6 +10,10 @@ from nplusone.core import signals
 
 
 Call = collections.namedtuple('Call', ['objects', 'frame'])
+PATTERNS = [
+    'site-packages', 'py.test',
+    'nplusone/core', 'nplusone/ext', 'nplusone/tests/utils',
+]
 
 
 @pytest.yield_fixture
@@ -19,7 +23,7 @@ def calls():
         calls.append(
             Call(
                 parser(args, kwargs, context),
-                stack.get_caller(),
+                stack.get_caller(patterns=PATTERNS)
             )
         )
     signals.lazy_load.connect(subscriber, sender=signals.get_worker())

@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.5.0 (2015-12-27)
+==================
+* Support Django 1.9.
+* Ignore lazy loads on singly-loaded records. Thanks @twidi!
+
 0.4.0 (2015-11-17)
 ==================
 * Support Django 1.9 beta.

@@ -131,10 +131,22 @@ By default, ``nplusone`` logs all potentially unnecessary queries using a logger
 
 The exception type can also be specified, if desired, using the ``NPLUSONE_ERROR`` option.
 
-Ignoring Warnings
-*****************
+Ignoring notifications
+**********************
 
-To suppress warnings thrown by intentional lazy loading, use the ``ignore`` context manager: ::
+To ignore notifications from ``nplusone`` globally, configure the whitelist using the `NPLUSONE_WHITELIST` option: ::
+
+    # Django config
+    NPLUSONE_WHITELIST = [
+        {'type': 'n_plus_one', 'model': 'myapp.MyModel'},
+    ]
+
+    # Flask-SQLAlchemy config
+    app.config['NPLUSONE_WHITELIST'] = [
+        {'type': 'unused_eager_load', 'model': 'MyModel', 'field': 'my_field'}
+    ]
+
+To suppress notifications locally, use the ``ignore`` context manager: ::
 
     from nplusone.core import signals
 

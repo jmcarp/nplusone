@@ -14,6 +14,7 @@ class Rule(object):
 
     def compare(self, label, model, field):
         return (
+            (self.label or self.model or self.field) and
             (self.label is None or self.label == label) and
             (self.model is None or self.match_model(model)) and
             (self.field is None or self.field == field)

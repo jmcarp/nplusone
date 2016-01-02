@@ -26,12 +26,19 @@ class NPlusOne(object):
 
     def __init__(self, app):
         self.app = app
-        self.notifiers = notifiers.init(self.app.config)
         self.init_app()
+
+    def load_config(self):
+        self.notifiers = notifiers.init(self.app.config)
+        self.whitelist = [
+            listeners.Rule(**item)
+            for item in self.app.config.get('NPLUSONE_WHITELIST', [])
+        ]
 
     def init_app(self):
         @self.app.before_request
         def connect():
+            self.load_config()
             g.listeners = getattr(g, 'listeners', {})
             for name, listener_type in six.iteritems(listeners.listeners):
                 g.listeners[name] = listener_type(self)
@@ -45,5 +52,6 @@ class NPlusOne(object):
             return response
 
     def notify(self, message):
-        for notifier in self.notifiers:
-            notifier.notify(message)
+        if not message.match(self.whitelist):
+            for notifier in self.notifiers:
+                notifier.notify(message)

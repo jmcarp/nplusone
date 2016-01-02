@@ -7,7 +7,6 @@ import webtest
 import sqlalchemy as sa
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from nplusone.core import notifiers
 from nplusone.core import exceptions
 from nplusone.ext.flask_sqlalchemy import NPlusOne
 from nplusone.ext.flask_sqlalchemy import setup_state
@@ -136,6 +135,15 @@ class TestNPlusOne:
 
     def test_many_to_many_raise(self, app, wrapper, objects, client, logger):
         app.config['NPLUSONE_RAISE'] = True
-        wrapper.notifiers = notifiers.init(app.config)
         with pytest.raises(exceptions.NPlusOneError):
             client.get('/many_to_many/')
+
+    def test_many_to_many_whitelist(self, app, wrapper, objects, client, logger):
+        app.config['NPLUSONE_WHITELIST'] = [{'model': 'User'}]
+        client.get('/many_to_many/')
+        assert not logger.log.called
+
+    def test_many_to_many_whitelist_decoy(self, app, wrapper, objects, client, logger):
+        app.config['NPLUSONE_WHITELIST'] = [{'model': 'Hobby'}]
+        client.get('/many_to_many/')
+        assert logger.log.called

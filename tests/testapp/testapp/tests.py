@@ -216,6 +216,11 @@ class TestIntegration:
         args = logger.log.call_args[0]
         assert 'Pet.user' in args[1]
 
+    def test_many_to_many_whitelist(self, objects, client, logger):
+        settings.NPLUSONE_WHITELIST = [{'model': 'testapp.User'}]
+        client.get('/many_to_many/')
+        assert not logger.log.called
+
 
 @pytest.mark.django_db
 def test_values(objects, lazy_listener):

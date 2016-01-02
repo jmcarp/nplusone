@@ -37,7 +37,7 @@ class LogNotifier(Notifier):
         self.level = config.get('NPLUSONE_LOG_LEVEL', logging.DEBUG)
 
     def notify(self, message):
-        self.logger.log(self.level, message)
+        self.logger.log(self.level, message.message)
 
 
 class ErrorNotifier(Notifier):
@@ -49,7 +49,7 @@ class ErrorNotifier(Notifier):
         self.error = config.get('NPLUSONE_ERROR', exceptions.NPlusOneError)
 
     def notify(self, message):
-        raise self.error(message)
+        raise self.error(message.message)
 
 
 def init(config):

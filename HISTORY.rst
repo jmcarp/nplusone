@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.6.1 (2016-01-08)
+==================
+* Handle SQLAlchemy properties and columns with different names.
+
 0.6.0 (2016-01-02)
 ==================
 * Add whitelist options.

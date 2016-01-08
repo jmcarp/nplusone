@@ -13,11 +13,21 @@ from nplusone.core import signals
 
 def to_key(instance):
     model = type(instance)
-    columns = model.__table__.primary_key.columns
     return ':'.join(
         [model.__name__] +
-        [format(getattr(instance, column.key)) for column in columns]
+        [
+            format(getattr(instance, key.key))
+            for key in get_primary_keys(model)
+        ]
     )
+
+
+def get_primary_keys(model):
+    mapper = model.__mapper__
+    return [
+        mapper.get_property_by_column(column)
+        for column in mapper.primary_key
+    ]
 
 
 def parse_load(args, kwargs, context, ret):

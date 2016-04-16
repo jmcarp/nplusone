@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import six
+from collections import defaultdict
 
 from nplusone.core import signals
 
@@ -98,25 +99,35 @@ class EagerListener(Listener):
 
     def setup(self):
         signals.eager_load.connect(self.handle_eager, sender=signals.get_worker())
-        self.touched = set()
+        self._get_instances = None
+        self.fetched = []
+        self.touched = []
 
     def teardown(self):
         self.log_eager()
 
     def handle_eager(self, caller, args=None, kwargs=None, context=None, parser=None):
+        self.fetched.append(parser(args, kwargs, context))
         signals.touch.connect(self.handle_touch, sender=signals.get_worker())
-        parsed = parser(args, kwargs, context)
-        self.touched.add(parsed)
 
     def handle_touch(self, caller, args=None, kwargs=None, context=None, parser=None):
-        parsed = parser(args, kwargs, context)
-        if parsed in self.touched:
-            self.touched.remove(parsed)
+        res = parser(args, kwargs, context)
+        if res:
+            self.touched.append(res)
 
     def log_eager(self):
-        for model, field in self.touched:
-            message = EagerLoadMessage(model, field)
-            self.parent.notify(message)
+        groups = defaultdict(lambda: defaultdict(set))
+        for model, field, instances, key in self.fetched:
+            groups[(model, field)][id(key)].update(instances)
+        for model, field, instance in self.touched:
+            group = groups[(model, field)]
+            for key, instances in list(group.items()):
+                if instance and instances.intersection(instance) and key in group:
+                    group.pop(key)
+        for (model, field), group in groups.items():
+            if group:
+                message = EagerLoadMessage(model, field)
+                self.parent.notify(message)
 
 
 listeners = {

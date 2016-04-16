@@ -36,8 +36,8 @@ def prefetch_one_to_one_unused(request):
 
 
 def prefetch_many_to_many(request):
-    users = models.User.objects.all().prefetch_related('hobbies')
-    return HttpResponse(users[0].hobbies.all())
+    pets = models.Pet.objects.all().prefetch_related('user')
+    return HttpResponse(str(pet.user) for pet in pets)
 
 
 def prefetch_many_to_many_unused(request):
@@ -46,8 +46,13 @@ def prefetch_many_to_many_unused(request):
 
 
 def prefetch_many_to_many_single(request):
-    users = models.User.objects.all().prefetch_related('hobbies')
-    return HttpResponse(users[0].hobbies.all()[0])
+    hobbies = models.Hobby.objects.all().prefetch_related('users')
+    return HttpResponse(hobbies[0].users.all()[0])
+
+
+def prefetch_many_to_many_no_related(request):
+    pets = models.Pet.objects.all().prefetch_related('allergy_set')
+    return HttpResponse(pets[0].allergy_set.all()[0])
 
 
 def select_one_to_one(request):
@@ -61,10 +66,20 @@ def select_one_to_one_unused(request):
 
 
 def select_many_to_one(request):
-    pets = models.Pet.objects.all().select_related('user')
-    return HttpResponse(pets[0].user)
+    pets = list(models.Pet.objects.all().select_related('user'))
+    return HttpResponse(pets[0].user if pets else None)
 
 
 def select_many_to_one_unused(request):
-    pets = models.Pet.objects.all().select_related('user')
+    pets = list(models.Pet.objects.all().select_related('user'))
+    return HttpResponse(pets[0])
+
+
+def prefetch_nested(request):
+    pets = list(models.Pet.objects.all().select_related('user__occupation'))
+    return HttpResponse(pets[0].user.occupation)
+
+
+def prefetch_nested_unused(request):
+    pets = list(models.Pet.objects.all().select_related('user__occupation'))
     return HttpResponse(pets[0])

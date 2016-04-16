@@ -9,8 +9,6 @@ import threading
 
 import django
 from django.db.models import query
-from django.db.models import query_utils
-from django.db.models.fields import related
 from django.db.models import Model
 
 from nplusone.core import signals
@@ -90,7 +88,7 @@ def parse_field(field):
             if hasattr(field.rel, 'model')
             else field.related_field.model  # Django <= 1.8
         ),
-        field.rel.related_name,
+        field.rel.related_name or get_related_name(field.rel.related_model),
     )
 
 
@@ -195,45 +193,10 @@ def _create_reverse_many_to_one_manager(*args, **kwargs):
 patch(create_reverse_many_to_one_manager, _create_reverse_many_to_one_manager)
 
 
-def parse_get_prefetcher(args, kwargs, context):
-    instance, field = args
-    return instance.__class__, field
-
-
-def parse_select_related(args, kwargs, context):
-    field = args[0]
-    if isinstance(field, related.OneToOneField):
-        return parse_field(field)
-    return parse_reverse_field(field)
-
-
-query.get_prefetcher = signals.signalify(
-    signals.eager_load,
-    query.get_prefetcher,
-    parser=parse_get_prefetcher,
-)
-
-
-# Emit `eager_load` on verified `select_related_descend`
-original_select_related_descend = query_utils.select_related_descend
-def select_related_descend(*args, **kwargs):
-    ret = original_select_related_descend(*args, **kwargs)
-    if ret:
-        signals.eager_load.send(
-            get_worker(),
-            args=args,
-            kwargs=kwargs,
-            parser=parse_select_related,
-            context=None,
-        )
-    return ret
-query_utils.select_related_descend = select_related_descend
-
-
 def parse_forward_many_to_one_get(args, kwargs, context):
-    descriptor = args[0]
+    descriptor, instance, _ = args
     field = descriptor.field
-    return parse_reverse_field(field)
+    return parse_reverse_field(field) + ([instance], )
 
 
 ForwardManyToOneDescriptor.__get__ = signals.signalify(
@@ -248,7 +211,7 @@ def parse_reverse_one_to_one_get(args, kwargs, context):
     if instance is None:
         return None
     field = descriptor.related.field
-    return parse_field(field)
+    return parse_field(field) + ([instance], )
 
 
 ReverseOneToOneDescriptor.__get__ = signals.signalify(
@@ -264,10 +227,15 @@ def parse_iterate_queryset(args, kwargs, context):
         manager = self._context['args'][0]
         # Handle iteration over many-to-many relationship
         if manager.__class__.__name__ == 'ManyRelatedManager':
-            return manager.instance.__class__, manager.prefetch_cache_name
+            rel = self._context['rel']
+            return (
+                manager.instance.__class__,
+                manager.prefetch_cache_name if rel.related_name else get_related_name(rel.related_model),
+                [manager.instance],
+            )
         # Handle iteration over one-to-many relationship
         else:
-            return parse_related(self._context)
+            return parse_related(self._context) + ([manager.instance], )
 
 
 def parse_load(args, kwargs, context, ret):
@@ -301,6 +269,60 @@ def iterate_queryset(self):
         )
     return ret
 query.QuerySet.__iter__ = iterate_queryset
+
+
+original_related_populator_init = query.RelatedPopulator.__init__
+def related_populator_init(self, *args, **kwargs):
+    original_related_populator_init(self, *args, **kwargs)
+    self.__nplusone__ = {
+        'args': args,
+        'kwargs': kwargs,
+    }
+query.RelatedPopulator.__init__ = related_populator_init
+
+
+def parse_eager_select(args, kwargs, context):
+    populator = args[0]
+    instance = args[2]
+    meta = populator.__nplusone__
+    klass_info, select, _ = meta['args']
+    field = klass_info['field']
+    model, name = (
+        parse_field(field)
+        if klass_info['reverse']
+        else parse_reverse_field(field)
+    )
+    return model, name, [instance], select
+
+
+query.RelatedPopulator.populate = signals.signalify(
+    signals.eager_load,
+    query.RelatedPopulator.populate,
+    parser=parse_eager_select,
+)
+
+
+def parse_eager_join(args, kwargs, context):
+    instances, descriptor, fetcher, _ = args
+    if hasattr(descriptor, 'field'):
+        model, field = (
+            parse_reverse_field(descriptor.field)
+            if isinstance(instances[0], descriptor.field.model)
+            else parse_field(descriptor.field)
+        )
+    elif hasattr(descriptor, 'related'):
+        model, field = parse_field(descriptor.related.field)
+    else:
+        model = descriptor.instance.__class__
+        field = fetcher.prefetch_to
+    return model, field, instances, instances
+
+
+query.prefetch_one_level = signals.signalify(
+    signals.eager_load,
+    query.prefetch_one_level,
+    parser=parse_eager_join,
+)
 
 
 # Emit `touch` on indexing into prefetched `QuerySet` instances

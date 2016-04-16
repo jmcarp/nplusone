@@ -26,7 +26,9 @@ def client():
 @pytest.fixture
 def objects():
     user = models.User.objects.create()
+    user2 = models.User.objects.create()
     pet = models.Pet.objects.create(user=user)
+    pet2 = models.Pet.objects.create(user=user2)
     allergy = models.Allergy.objects.create()
     allergy.pets.add(pet)
     occupation = models.Occupation.objects.create(user=user)
@@ -186,6 +188,11 @@ class TestIntegration:
         client.get('/prefetch_many_to_many/')
         assert not logger.log.called
 
+    def test_prefetch_many_to_many_empty(self, objects, client, logger):
+        models.User.objects.all().delete()
+        client.get('/prefetch_many_to_many/')
+        assert not logger.log.called
+
     def test_prefetch_many_to_many_unused(self, objects, client, logger):
         client.get('/prefetch_many_to_many_unused/')
         assert len(logger.log.call_args_list) == 1
@@ -194,6 +201,10 @@ class TestIntegration:
 
     def test_prefetch_many_to_many_single(self, objects, client, logger):
         client.get('/prefetch_many_to_many_single/')
+        assert not logger.log.called
+
+    def test_prefetch_many_to_many_no_related_name(self, objects, client, logger):
+        client.get('/prefetch_many_to_many_no_related/')
         assert not logger.log.called
 
     def test_select_one_to_one(self, objects, client, logger):
@@ -210,11 +221,27 @@ class TestIntegration:
         client.get('/select_many_to_one/')
         assert not logger.log.called
 
+    def test_select_many_to_one_empty(self, objects, client, logger):
+        models.Pet.objects.all().delete()
+        client.get('/select_many_to_one/')
+        assert not logger.log.called
+
     def test_select_many_to_one_unused(self, objects, client, logger):
         client.get('/select_many_to_one_unused/')
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'Pet.user' in args[1]
+
+    def test_nested(self, objects, client, logger):
+        client.get('/prefetch_nested/')
+        assert not logger.log.called
+
+    def test_nested_unused(self, objects, client, logger):
+        client.get('/prefetch_nested_unused/')
+        assert len(logger.log.call_args_list) == 2
+        calls = [call[0] for call in logger.log.call_args_list]
+        assert any('Pet.user' in call[1] for call in calls)
+        assert any('User.occupation' in call[1] for call in calls)
 
     def test_many_to_many_whitelist(self, objects, client, logger):
         settings.NPLUSONE_WHITELIST = [{'model': 'testapp.User'}]

@@ -17,7 +17,7 @@ def to_key(instance):
     return ':'.join(
         [model.__name__] +
         [
-            format(getattr(instance, key.key))
+            format(instance.__dict__.get(key.key))  # Avoid recursion on __get__
             for key in get_primary_keys(model)
         ]
     )

@@ -44,9 +44,8 @@ def parse_lazy_load(args, kwargs, context):
 
 
 def parse_attribute_get(args, kwargs, context):
-    attr = args[0]
-    instance = args[1]
-    return attr.class_, attr.key, [instance]
+    attr, instance = args[:2]
+    return attr.class_, attr.key, [to_key(instance)]
 
 
 strategies.LazyLoader._load_for_state = signals.signalify(
@@ -60,12 +59,12 @@ def parse_populate(args, kwargs, context):
     query_context = args[0]
     state = args[2]
     instance = state.object
-    return instance.__class__, context['key'], [instance], id(query_context)
+    return instance.__class__, context['key'], [to_key(instance)], id(query_context)
 
 
+# Emit `eager_load` on populating from `joinedload` or `subqueryload`
 original_populate_full = loading._populate_full
 def _populate_full(*args, **kwargs):
-    """Intercept loaded instances after populating state."""
     ret = original_populate_full(*args, **kwargs)
     dict_ = args[3]
     populators = args[7]

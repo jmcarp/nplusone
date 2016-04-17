@@ -42,7 +42,7 @@ Note: ``nplusone`` should only be used for development and should not be deploye
 Django
 ******
 
-Note: ``nplusone`` supports Django 1.7, 1.8, and 1.9.
+Note: ``nplusone`` supports Django 1.8 and 1.9.
 
 Add ``nplusone`` to ``INSTALLED_APPS``: ::
 

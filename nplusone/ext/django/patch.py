@@ -55,24 +55,14 @@ def signalify_queryset(func, parser=None, **context):
         ctx = copy.copy(context)
         ctx['args'] = context.get('args', args)
         ctx['kwargs'] = context.get('kwargs', kwargs)
-        # In Django 1.7.x, some `get_queryset` methods return a `Manager`, not a
-        # `QuerySet`; in this case, patch the `get_queryset` method of the returned
-        # `Manager`.
-        if hasattr(queryset, 'get_queryset'):  # pragma: no cover
-            queryset.get_queryset = signalify_queryset(
-                queryset.get_queryset,
-                parser=parser,
-                **ctx
-            )
-        else:
-            queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
-            queryset.iterator = signals.signalify(
-                signals.lazy_load,
-                queryset.iterator,
-                parser=parser,
-                **ctx
-            )
-            queryset._context = ctx
+        queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
+        queryset.iterator = signals.signalify(
+            signals.lazy_load,
+            queryset.iterator,
+            parser=parser,
+            **ctx
+        )
+        queryset._context = ctx
         return queryset
     return wrapped
 
@@ -195,8 +185,10 @@ patch(create_reverse_many_to_one_manager, _create_reverse_many_to_one_manager)
 
 def parse_forward_many_to_one_get(args, kwargs, context):
     descriptor, instance, _ = args
-    field = descriptor.field
-    return parse_reverse_field(field) + ([instance], )
+    if instance is None:
+        return None
+    field, model = parse_reverse_field(descriptor.field)
+    return field, model, [to_key(instance)]
 
 
 ForwardManyToOneDescriptor.__get__ = signals.signalify(
@@ -210,8 +202,8 @@ def parse_reverse_one_to_one_get(args, kwargs, context):
     descriptor, instance = args[:2]
     if instance is None:
         return None
-    field = descriptor.related.field
-    return parse_field(field) + ([instance], )
+    model, field = parse_field(descriptor.related.field)
+    return model, field, [to_key(instance)]
 
 
 ReverseOneToOneDescriptor.__get__ = signals.signalify(
@@ -225,17 +217,19 @@ def parse_iterate_queryset(args, kwargs, context):
     self = args[0]
     if hasattr(self, '_context'):
         manager = self._context['args'][0]
+        instance = manager.instance
         # Handle iteration over many-to-many relationship
         if manager.__class__.__name__ == 'ManyRelatedManager':
             rel = self._context['rel']
             return (
-                manager.instance.__class__,
-                manager.prefetch_cache_name if rel.related_name else get_related_name(rel.related_model),
-                [manager.instance],
+                instance.__class__,
+                rel.related_name or get_related_name(rel.related_model),
+                [to_key(instance)],
             )
         # Handle iteration over one-to-many relationship
         else:
-            return parse_related(self._context) + ([manager.instance], )
+            model, field = parse_related(self._context)
+            return model, field, [to_key(instance)]
 
 
 def parse_load(args, kwargs, context, ret):
@@ -292,9 +286,10 @@ def parse_eager_select(args, kwargs, context):
         if klass_info['reverse']
         else parse_reverse_field(field)
     )
-    return model, name, [instance], id(select)
+    return model, name, [to_key(instance)], id(select)
 
 
+# Emit `eager_load` on populating from `select_related`
 query.RelatedPopulator.populate = signals.signalify(
     signals.eager_load,
     query.RelatedPopulator.populate,
@@ -304,20 +299,13 @@ query.RelatedPopulator.populate = signals.signalify(
 
 def parse_eager_join(args, kwargs, context):
     instances, descriptor, fetcher, _ = args
-    if hasattr(descriptor, 'field'):
-        model, field = (
-            parse_reverse_field(descriptor.field)
-            if isinstance(instances[0], descriptor.field.model)
-            else parse_field(descriptor.field)
-        )
-    elif hasattr(descriptor, 'related'):
-        model, field = parse_field(descriptor.related.field)
-    else:
-        model = descriptor.instance.__class__
-        field = fetcher.prefetch_to
-    return model, field, instances, id(instances)
+    model = instances[0].__class__
+    field = fetcher.prefetch_to
+    keys = [to_key(instance) for instance in instances]
+    return model, field, keys, id(instances)
 
 
+# Emit `eager_load` on populating from `prefetch_related`
 query.prefetch_one_level = signals.signalify(
     signals.eager_load,
     query.prefetch_one_level,

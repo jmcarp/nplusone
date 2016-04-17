@@ -99,35 +99,51 @@ class EagerListener(Listener):
 
     def setup(self):
         signals.eager_load.connect(self.handle_eager, sender=signals.get_worker())
-        self._get_instances = None
-        self.fetched = []
+        self.tracker = EagerTracker()
         self.touched = []
 
     def teardown(self):
         self.log_eager()
 
     def handle_eager(self, caller, args=None, kwargs=None, context=None, parser=None):
-        self.fetched.append(parser(args, kwargs, context))
+        self.tracker.track(*parser(args, kwargs, context))
         signals.touch.connect(self.handle_touch, sender=signals.get_worker())
 
     def handle_touch(self, caller, args=None, kwargs=None, context=None, parser=None):
-        res = parser(args, kwargs, context)
-        if res:
-            self.touched.append(res)
+        self.touched.append(parser(args, kwargs, context))
 
     def log_eager(self):
-        groups = defaultdict(lambda: defaultdict(set))
-        for model, field, instances, key in self.fetched:
-            groups[(model, field)][key].update(instances)
-        for model, field, instance in self.touched:
-            group = groups[(model, field)]
-            for key, instances in list(group.items()):
-                if instance and instances.intersection(instance) and key in group:
-                    group.pop(key)
-        for (model, field), group in groups.items():
-            if group:
-                message = EagerLoadMessage(model, field)
-                self.parent.notify(message)
+        self.tracker.prune(self.touched)
+        for model, field in self.tracker.unused:
+            message = EagerLoadMessage(model, field)
+            self.parent.notify(message)
+
+
+class EagerTracker(object):
+    """Data structure for tracking eager-loaded and subsequently touched
+    related rows. Eager-loaded rows are stored in a dict mapping associations
+    to nested dicts mapping query keys to instances.
+    """
+    def __init__(self):
+        self.data = defaultdict(lambda: defaultdict(set))
+
+    def track(self, model, field, instances, key):
+        self.data[(model, field)][key].update(instances)
+
+    def prune(self, touched):
+        for model, field, touch_instances in touched:
+            group = self.data[(model, field)]
+            for key, fetch_instances in list(group.items()):
+                if touch_instances and fetch_instances.intersection(touch_instances):
+                    group.pop(key, None)
+
+    @property
+    def unused(self):
+        return [
+            (model, field)
+            for (model, field), group in self.data.items()
+            if group
+        ]
 
 
 listeners = {

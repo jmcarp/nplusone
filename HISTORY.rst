@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.7.0 (2016-04-18)
+==================
+* Refactor eager-load checking.
+* Fix false positive on empty queries using eager loads.
+* Handle eager load checks on nested relationships.
+* Backwards-incompatible: Drop support for Django 1.7.
+
 0.6.1 (2016-01-08)
 ==================
 * Handle SQLAlchemy properties and columns with different names.
@@ -37,6 +44,5 @@ Changelog
 
 0.1.0 (2015-06-29)
 ==================
-
 * First release.
 * Support for SQLAlchemy, Peewee, and the Django ORM.

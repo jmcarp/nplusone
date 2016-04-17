@@ -86,6 +86,8 @@ def routes(app, models):
     @app.route('/eager_subquery/')
     def eager_subquery():
         users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
+        # Touch class-level descriptor to exercise `None` instance checks
+        print(models.User.hobbies)
         return str(users[0].hobbies if users else None)
 
     @app.route('/eager_join_unused/')

@@ -36,7 +36,10 @@ def prefetch_one_to_one_unused(request):
 
 
 def prefetch_many_to_many(request):
-    pets = models.Pet.objects.all().prefetch_related('user')
+    pets = list(models.Pet.objects.all().prefetch_related('user'))
+    # Touch class-level descriptors to exercise `None` instance checks
+    print(models.Occupation.user)
+    print(models.User.occupation)
     return HttpResponse(str(pet.user) for pet in pets)
 
 

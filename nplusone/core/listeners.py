@@ -113,7 +113,7 @@ class EagerListener(Listener):
         self.touched.append(parser(args, kwargs, context))
 
     def log_eager(self):
-        self.tracker.prune(self.touched)
+        self.tracker.prune([each for each in self.touched if each])
         for model, field in self.tracker.unused:
             message = EagerLoadMessage(model, field)
             self.parent.notify(message)

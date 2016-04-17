@@ -45,6 +45,8 @@ def parse_lazy_load(args, kwargs, context):
 
 def parse_attribute_get(args, kwargs, context):
     attr, instance = args[:2]
+    if instance is None:
+        return None
     return attr.class_, attr.key, [to_key(instance)]
 
 

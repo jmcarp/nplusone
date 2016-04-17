@@ -6,7 +6,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('..'))
-import nplusone
+import nplusone  # noqa
 
 extensions = [
     'sphinx.ext.autodoc',

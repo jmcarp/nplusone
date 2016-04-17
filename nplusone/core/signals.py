@@ -12,7 +12,8 @@ eager_load = blinker.Signal()
 touch = blinker.Signal()
 
 
-get_worker = lambda *a, **kw: blinker.ANY
+def get_worker(*args, **kwargs):
+    return blinker.ANY
 
 
 def signalify(signal, func, parser=None, **context):

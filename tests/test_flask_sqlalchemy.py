@@ -78,10 +78,15 @@ def routes(app, models):
         users = models.User.query.all()
         return str(users[0].hobbies)
 
-    @app.route('/eager/')
-    def eager():
+    @app.route('/eager_join/')
+    def eager_join():
         users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
-        return str(users[0].hobbies)
+        return str(users[0].hobbies if users else None)
+
+    @app.route('/eager_subquery/')
+    def eager_subquery():
+        users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
+        return str(users[0].hobbies if users else None)
 
     @app.route('/eager_join_unused/')
     def eager_join_unused():
@@ -92,6 +97,24 @@ def routes(app, models):
     def eager_subquery_unused():
         users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
         return str(users[0])
+
+    @app.route('/eager_nested/')
+    def eager_nested():
+        hobbies = models.Hobby.query.options(
+            sa.orm.joinedload(models.Hobby.users).joinedload(
+                models.User.addresses,
+            )
+        ).all()
+        return str(hobbies[0].users[0].addresses)
+
+    @app.route('/eager_nested_unused/')
+    def eager_nested_unused():
+        hobbies = models.Hobby.query.options(
+            sa.orm.joinedload(models.Hobby.users).joinedload(
+                models.User.addresses,
+            )
+        ).all()
+        return str(hobbies[0])
 
 
 @pytest.fixture
@@ -117,8 +140,22 @@ class TestNPlusOne:
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
 
-    def test_eager(self, objects, client, logger):
-        client.get('/eager/')
+    def test_eager_join(self, objects, client, logger):
+        client.get('/eager_join/')
+        assert not logger.log.called
+
+    def test_eager_subquery(self, objects, client, logger):
+        client.get('/eager_subquery/')
+        assert not logger.log.called
+
+    def test_eager_join_empty(self, models, objects, client, logger):
+        models.User.query.delete()
+        client.get('/eager_join/')
+        assert not logger.log.called
+
+    def test_eager_subquery_empty(self, models, objects, client, logger):
+        models.User.query.delete()
+        client.get('/eager_subquery/')
         assert not logger.log.called
 
     def test_eager_join_unused(self, objects, client, logger):
@@ -132,6 +169,17 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
+
+    def test_eager_nested_unused(self, app, wrapper, objects, client, logger):
+        client.get('/eager_nested/')
+        assert not logger.log.called
+
+    def test_eager_nested(self, app, wrapper, objects, client, logger):
+        client.get('/eager_nested_unused/')
+        assert len(logger.log.call_args_list) == 2
+        calls = [call[0] for call in logger.log.call_args_list]
+        assert any('Hobby.users' in call[1] for call in calls)
+        assert any('User.addresses' in call[1] for call in calls)
 
     def test_many_to_many_raise(self, app, wrapper, objects, client, logger):
         app.config['NPLUSONE_RAISE'] = True

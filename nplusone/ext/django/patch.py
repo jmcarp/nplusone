@@ -292,7 +292,7 @@ def parse_eager_select(args, kwargs, context):
         if klass_info['reverse']
         else parse_reverse_field(field)
     )
-    return model, name, [instance], select
+    return model, name, [instance], id(select)
 
 
 query.RelatedPopulator.populate = signals.signalify(
@@ -315,7 +315,7 @@ def parse_eager_join(args, kwargs, context):
     else:
         model = descriptor.instance.__class__
         field = fetcher.prefetch_to
-    return model, field, instances, instances
+    return model, field, instances, id(instances)
 
 
 query.prefetch_one_level = signals.signalify(

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import itertools
 
 from sqlalchemy.orm import query
+from sqlalchemy.orm import loading
 from sqlalchemy.orm import attributes
 from sqlalchemy.orm import strategies
 
@@ -39,17 +40,13 @@ def parse_load(args, kwargs, context, ret):
 
 def parse_lazy_load(args, kwargs, context):
     loader, state, _ = args
-    return loader.parent.class_, to_key(state.object), loader.parent_property.key
-
-
-def parse_eager_load(args, kwargs, context):
-    loader = args[0]
-    return loader.parent.class_, loader.key
+    return state.object.__class__, to_key(state.object), loader.parent_property.key
 
 
 def parse_attribute_get(args, kwargs, context):
     attr = args[0]
-    return attr.class_, attr.key
+    instance = args[1]
+    return attr.class_, attr.key, [instance]
 
 
 strategies.LazyLoader._load_for_state = signals.signalify(
@@ -59,18 +56,30 @@ strategies.LazyLoader._load_for_state = signals.signalify(
 )
 
 
-strategies.JoinedLoader._create_eager_join = signals.signalify(
-    signals.eager_load,
-    strategies.JoinedLoader._create_eager_join,
-    parser=parse_eager_load,
-)
+def parse_populate(args, kwargs, context):
+    query_context = args[0]
+    state = args[2]
+    instance = state.object
+    return instance.__class__, context['key'], [instance], id(query_context)
 
 
-strategies.SubqueryLoader._apply_joins = signals.signalify(
-    signals.eager_load,
-    strategies.SubqueryLoader._apply_joins,
-    parser=parse_eager_load,
-)
+original_populate_full = loading._populate_full
+def _populate_full(*args, **kwargs):
+    """Intercept loaded instances after populating state."""
+    ret = original_populate_full(*args, **kwargs)
+    dict_ = args[3]
+    populators = args[7]
+    for key, _ in populators.get('eager', []):
+        if dict_.get(key):
+            signals.eager_load.send(
+                signals.get_worker(),
+                args=args,
+                kwargs=kwargs,
+                context={'key': key},
+                parser=parse_populate,
+            )
+    return ret
+loading._populate_full = _populate_full
 
 
 attributes.InstrumentedAttribute.__get__ = signals.signalify(

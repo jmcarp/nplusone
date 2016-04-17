@@ -118,7 +118,7 @@ class EagerListener(Listener):
     def log_eager(self):
         groups = defaultdict(lambda: defaultdict(set))
         for model, field, instances, key in self.fetched:
-            groups[(model, field)][id(key)].update(instances)
+            groups[(model, field)][key].update(instances)
         for model, field, instance in self.touched:
             group = groups[(model, field)]
             for key, instances in list(group.items()):

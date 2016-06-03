@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.7.1 (2016-06-03)
+==================
+* Fix field name on Django `prefetch_related`.
+* Handle iteration over empty results in Django templates.
+* Fix model and field introspection on Django many-to-many lookups.
+* Ignore lazy loads from `get` and `one`.
+
 0.7.0 (2016-04-18)
 ==================
 * Refactor eager-load checking.

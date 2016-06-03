@@ -4,7 +4,6 @@ import copy
 import inspect
 import functools
 import importlib
-import itertools
 import threading
 
 import django
@@ -148,6 +147,13 @@ query.prefetch_one_level = signals.designalify(
 )
 
 
+# Ignore `load` events during calls to `get`
+query.QuerySet.get = signals.designalify(
+    signals.load,
+    query.QuerySet.get,
+)
+
+
 ReverseOneToOneDescriptor.get_queryset = signalify_queryset(
     ReverseOneToOneDescriptor.get_queryset,
     parser=parse_reverse_one_to_one_queryset,
@@ -213,23 +219,28 @@ ReverseOneToOneDescriptor.__get__ = signals.signalify(
 )
 
 
-def parse_iterate_queryset(args, kwargs, context):
+def parse_fetch_all(args, kwargs, context):
     self = args[0]
     if hasattr(self, '_context'):
         manager = self._context['args'][0]
         instance = manager.instance
         # Handle iteration over many-to-many relationship
         if manager.__class__.__name__ == 'ManyRelatedManager':
-            rel = self._context['rel']
             return (
                 instance.__class__,
-                rel.related_name or get_related_name(rel.related_model),
+                parse_manager_field(manager, self._context['rel']),
                 [to_key(instance)],
             )
         # Handle iteration over one-to-many relationship
         else:
             model, field = parse_related(self._context)
             return model, field, [to_key(instance)]
+
+
+def parse_manager_field(manager, rel):
+    if manager.reverse:
+        return rel.related_name or get_related_name(rel.related_model)
+    return rel.field.name or get_related_name(rel.model)
 
 
 def parse_load(args, kwargs, context, ret):
@@ -244,25 +255,27 @@ def is_single(low, high):
     return high is not None and high - low == 1
 
 
-# Emit `touch` on iterating prefetched `QuerySet` instances
-original_iterate_queryset = query.QuerySet.__iter__
-def iterate_queryset(self):
+# On queryset fetch, emit `touch` if results have been prefetched and `load`
+# if the query requests more than one record. Note: we patch `_fetch_all` rather
+# than `__iter__` to handle iteration over empty querysets in Django templates,
+# which does not call `__iter__`.
+original_fetch_all = query.QuerySet._fetch_all
+def fetch_all(self):
     if self._prefetch_done:
         signals.touch.send(
             get_worker(),
             args=(self, ),
-            parser=parse_iterate_queryset,
+            parser=parse_fetch_all,
         )
-    ret, clone = itertools.tee(original_iterate_queryset(self))
+    original_fetch_all(self)
     if not is_single(self.query.low_mark, self.query.high_mark):
         signals.load.send(
             get_worker(),
             args=(self, ),
-            ret=list(clone),
+            ret=self._result_cache,
             parser=parse_load,
         )
-    return ret
-query.QuerySet.__iter__ = iterate_queryset
+query.QuerySet._fetch_all = fetch_all
 
 
 original_related_populator_init = query.RelatedPopulator.__init__
@@ -320,7 +333,7 @@ def getitem_queryset(self, index):
         signals.touch.send(
             get_worker(),
             args=(self, ),
-            parser=parse_iterate_queryset,
+            parser=parse_fetch_all,
         )
     return original_getitem_queryset(self, index)
 query.QuerySet.__getitem__ = getitem_queryset

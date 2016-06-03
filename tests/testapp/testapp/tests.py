@@ -119,7 +119,7 @@ class TestManyToMany:
 
     def test_many_to_many_prefetch(self, objects, calls):
         users = models.User.objects.all().prefetch_related('hobbies')
-        users[0].hobbies.all()
+        list(users[0].hobbies.all())
         assert len(calls) == 0
 
     def test_many_to_many_reverse(self, objects, calls):
@@ -166,6 +166,10 @@ class TestIntegration:
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
 
+    def test_many_to_many_get(self, objects, client, logger):
+        client.get('/many_to_many_get/')
+        assert len(logger.log.call_args_list) == 0
+
     def test_many_to_many_reverse_no_related_name(self, objects, calls):
         pet = models.Pet.objects.first()
         pet.allergy_set.first()
@@ -188,16 +192,25 @@ class TestIntegration:
         client.get('/prefetch_many_to_many/')
         assert not logger.log.called
 
+    def test_prefetch_many_to_many_render(self, objects, client, logger):
+        client.get('/prefetch_many_to_many_render/')
+        assert not logger.log.called
+
     def test_prefetch_many_to_many_empty(self, objects, client, logger):
         models.User.objects.all().delete()
         client.get('/prefetch_many_to_many/')
+        assert not logger.log.called
+
+    def test_prefetch_many_to_many_render_empty(self, objects, client, logger):
+        models.User.objects.all().delete()
+        client.get('/prefetch_many_to_many_render/')
         assert not logger.log.called
 
     def test_prefetch_many_to_many_unused(self, objects, client, logger):
         client.get('/prefetch_many_to_many_unused/')
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
-        assert 'User.addresses' in args[1]
+        assert 'User.hobbies' in args[1]
 
     def test_prefetch_many_to_many_single(self, objects, client, logger):
         client.get('/prefetch_many_to_many_single/')

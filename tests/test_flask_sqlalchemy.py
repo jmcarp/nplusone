@@ -68,6 +68,11 @@ def routes(app, models):
         users = models.User.query.all()
         return str(users[0].addresses)
 
+    @app.route('/many_to_one_one/')
+    def many_to_one_one():
+        user = models.User.query.filter_by(id=1).one()
+        return str(user.addresses)
+
     @app.route('/many_to_one_first/')
     def many_to_one_first():
         user = models.User.query.first()
@@ -131,6 +136,10 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.addresses' in args[1]
+
+    def test_many_to_one_one(self, objects, client, logger):
+        client.get('/many_to_one_one/')
+        assert not logger.log.called
 
     def test_many_to_one_first(self, objects, client, logger):
         client.get('/many_to_one_first/')

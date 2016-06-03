@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.http import HttpResponse
+from django.template import Template, Context
 
 from . import models
 
@@ -25,6 +26,11 @@ def many_to_many(request):
     return HttpResponse(users[0].hobbies.all())
 
 
+def many_to_many_get(request):
+    user = models.User.objects.get(pk=1)
+    return HttpResponse(user.hobbies.all())
+
+
 def prefetch_one_to_one(request):
     users = models.User.objects.all().select_related('occupation')
     return HttpResponse(users[0].occupation)
@@ -36,15 +42,28 @@ def prefetch_one_to_one_unused(request):
 
 
 def prefetch_many_to_many(request):
-    pets = list(models.Pet.objects.all().prefetch_related('user'))
+    users = list(models.User.objects.all().prefetch_related('hobbies'))
     # Touch class-level descriptors to exercise `None` instance checks
     print(models.Occupation.user)
     print(models.User.occupation)
-    return HttpResponse(str(pet.user) for pet in pets)
+    return HttpResponse(list(user.hobbies.all()) for user in users)
+
+
+def prefetch_many_to_many_render(request):
+    users = models.User.objects.all().prefetch_related('hobbies')
+    template = '''
+    {% for user in users %}
+        {% for hobby in user.hobbies.all %}
+            {{ hobby.id }}
+        {% endfor %}
+    {% endfor %}
+    '''
+    resp = Template(template).render(Context({'users': users}))
+    return HttpResponse(resp)
 
 
 def prefetch_many_to_many_unused(request):
-    users = models.User.objects.all().prefetch_related('addresses')
+    users = models.User.objects.all().prefetch_related('hobbies')
     return HttpResponse(users[0])
 
 

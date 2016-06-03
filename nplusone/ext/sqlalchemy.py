@@ -106,3 +106,9 @@ def query_iter(self):
         )
     return ret
 query.Query.__iter__ = query_iter
+
+
+# Ignore `load` events during calls to `one`
+for method in ['one_or_none', 'one']:
+    original = getattr(query.Query, method)
+    setattr(query.Query, method, signals.designalify(signals.load, original))

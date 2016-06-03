@@ -245,12 +245,23 @@ class TestIntegration:
         args = logger.log.call_args[0]
         assert 'Pet.user' in args[1]
 
-    def test_nested(self, objects, client, logger):
+    def test_prefetch_nested(self, objects, client, logger):
         client.get('/prefetch_nested/')
         assert not logger.log.called
 
-    def test_nested_unused(self, objects, client, logger):
+    def test_prefetch_nested_unused(self, objects, client, logger):
         client.get('/prefetch_nested_unused/')
+        assert len(logger.log.call_args_list) == 2
+        calls = [call[0] for call in logger.log.call_args_list]
+        assert any('Pet.user' in call[1] for call in calls)
+        assert any('User.occupation' in call[1] for call in calls)
+
+    def test_select_nested(self, objects, client, logger):
+        client.get('/select_nested/')
+        assert not logger.log.called
+
+    def test_select_nested_unused(self, objects, client, logger):
+        client.get('/select_nested_unused/')
         assert len(logger.log.call_args_list) == 2
         calls = [call[0] for call in logger.log.call_args_list]
         assert any('Pet.user' in call[1] for call in calls)

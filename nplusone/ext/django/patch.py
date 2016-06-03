@@ -311,9 +311,9 @@ query.RelatedPopulator.populate = signals.signalify(
 
 
 def parse_eager_join(args, kwargs, context):
-    instances, descriptor, fetcher, _ = args
+    instances, descriptor, fetcher, level = args
     model = instances[0].__class__
-    field = fetcher.prefetch_to
+    field, _ = fetcher.get_current_to_attr(level)
     keys = [to_key(instance) for instance in instances]
     return model, field, keys, id(instances)
 

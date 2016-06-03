@@ -98,10 +98,20 @@ def select_many_to_one_unused(request):
 
 
 def prefetch_nested(request):
-    pets = list(models.Pet.objects.all().select_related('user__occupation'))
+    pets = list(models.Pet.objects.all().prefetch_related('user__occupation'))
     return HttpResponse(pets[0].user.occupation)
 
 
 def prefetch_nested_unused(request):
+    pets = list(models.Pet.objects.all().prefetch_related('user__occupation'))
+    return HttpResponse(pets[0])
+
+
+def select_nested(request):
+    pets = list(models.Pet.objects.all().select_related('user__occupation'))
+    return HttpResponse(pets[0].user.occupation)
+
+
+def select_nested_unused(request):
     pets = list(models.Pet.objects.all().select_related('user__occupation'))
     return HttpResponse(pets[0])

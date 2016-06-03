@@ -21,4 +21,6 @@ urlpatterns = [
     url(r'^select_many_to_one_unused/$', views.select_many_to_one_unused),
     url(r'^prefetch_nested/$', views.prefetch_nested),
     url(r'^prefetch_nested_unused/$', views.prefetch_nested_unused),
+    url(r'^select_nested/$', views.select_nested),
+    url(r'^select_nested_unused/$', views.select_nested_unused),
 ]

@@ -97,8 +97,10 @@ def query_execute(self):
     signal.send(
         signals.get_worker(),
         args=(self, ),
-        ret=[row for row in ret],
+        ret=list(ret),
         parser=parse_load,
     )
+    # Reset result index so that later code can call `next`
+    ret._idx = 0
     return ret
 SelectQuery.execute = query_execute

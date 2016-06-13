@@ -6,9 +6,13 @@ import mock
 import pytest
 
 from django.conf import settings
+from django.http.request import HttpRequest
+from django.http.response import HttpResponse
+
 from django_webtest import DjangoTestApp
 
 from nplusone.ext.django.patch import setup_state
+from nplusone.ext.django.middleware import NPlusOneMiddleware
 
 from . import models
 
@@ -284,3 +288,10 @@ class TestIntegration:
 @pytest.mark.django_db
 def test_values(objects, lazy_listener):
     list(models.User.objects.values('id'))
+
+
+def test_middleware_no_process_request():
+    middleware = NPlusOneMiddleware()
+    req, resp = HttpRequest(), HttpResponse()
+    processed = middleware.process_response(req, resp)
+    assert processed is resp

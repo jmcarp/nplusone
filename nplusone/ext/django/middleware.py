@@ -42,8 +42,9 @@ class NPlusOneMiddleware(object):
 
     def process_response(self, request, response):
         for name, listener_type in six.iteritems(listeners.listeners):
-            listener = self.listeners[request].pop(name)
-            listener.teardown()
+            listener = self.listeners.get(request, {}).pop(name, None)
+            if listener:
+                listener.teardown()
         return response
 
     def notify(self, message):

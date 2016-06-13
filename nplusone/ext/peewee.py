@@ -89,12 +89,16 @@ def is_single(offset, limit):
 original_query_execute = SelectQuery.execute
 def query_execute(self):
     ret = original_query_execute(self)
-    if not is_single(self._offset, self._limit):
-        signals.load.send(
-            signals.get_worker(),
-            args=(self, ),
-            ret=list(ret),
-            parser=parse_load,
-        )
+    signal = (
+        signals.ignore_load
+        if is_single(self._offset, self._limit)
+        else signals.load
+    )
+    signal.send(
+        signals.get_worker(),
+        args=(self, ),
+        ret=[row for row in ret],
+        parser=parse_load,
+    )
     return ret
 SelectQuery.execute = query_execute

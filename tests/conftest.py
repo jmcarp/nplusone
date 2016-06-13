@@ -17,7 +17,7 @@ PATTERNS = [
 @pytest.yield_fixture
 def calls():
     calls = []
-    def subscriber(sender, args=None, kwargs=None, context=None, parser=None):
+    def subscriber(sender, args=None, kwargs=None, context=None, ret=None, parser=None):
         calls.append(
             Call(
                 parser(args, kwargs, context),

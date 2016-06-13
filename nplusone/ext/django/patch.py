@@ -147,10 +147,15 @@ query.prefetch_one_level = signals.designalify(
 )
 
 
-# Ignore `load` events during calls to `get`
-query.QuerySet.get = signals.designalify(
-    signals.load,
+def parse_get(args, kwargs, context, ret):
+    return [to_key(ret)] if isinstance(ret, Model) else []
+
+
+# Ignore records loaded during `get`
+query.QuerySet.get = signals.signalify(
+    signals.ignore_load,
     query.QuerySet.get,
+    parser=parse_get,
 )
 
 
@@ -255,10 +260,10 @@ def is_single(low, high):
     return high is not None and high - low == 1
 
 
-# On queryset fetch, emit `touch` if results have been prefetched and `load`
-# if the query requests more than one record. Note: we patch `_fetch_all` rather
-# than `__iter__` to handle iteration over empty querysets in Django templates,
-# which does not call `__iter__`.
+# On queryset fetch, emit `touch` if results have been prefetched; emit `load`
+# if the query requests more than one record, else `ignore_load`. Note: we patch
+# `_fetch_all` rather than `__iter__` to handle iteration over empty querysets
+# in Django templates, which does not call `__iter__`.
 original_fetch_all = query.QuerySet._fetch_all
 def fetch_all(self):
     if self._prefetch_done:
@@ -268,13 +273,17 @@ def fetch_all(self):
             parser=parse_fetch_all,
         )
     original_fetch_all(self)
-    if not is_single(self.query.low_mark, self.query.high_mark):
-        signals.load.send(
-            get_worker(),
-            args=(self, ),
-            ret=self._result_cache,
-            parser=parse_load,
-        )
+    signal = (
+        signals.ignore_load
+        if is_single(self.query.low_mark, self.query.high_mark)
+        else signals.load
+    )
+    signal.send(
+        get_worker(),
+        args=(self, ),
+        ret=self._result_cache,
+        parser=parse_load,
+    )
 query.QuerySet._fetch_all = fetch_all
 
 

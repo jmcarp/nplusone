@@ -7,6 +7,7 @@ import blinker
 
 
 load = blinker.Signal()
+ignore_load = blinker.Signal()
 lazy_load = blinker.Signal()
 eager_load = blinker.Signal()
 touch = blinker.Signal()
@@ -19,14 +20,16 @@ def get_worker(*args, **kwargs):
 def signalify(signal, func, parser=None, **context):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        ret = func(*args, **kwargs)
         signal.send(
             get_worker(),
             args=args,
             kwargs=kwargs,
+            ret=ret,
             context=context,
             parser=parser,
         )
-        return func(*args, **kwargs)
+        return ret
     return wrapped
 
 

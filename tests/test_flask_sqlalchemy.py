@@ -83,6 +83,18 @@ def routes(app, models):
         users = models.User.query.all()
         return str(users[0].hobbies)
 
+    @app.route('/many_to_many_impossible/')
+    def many_to_many_impossible():
+        user = models.User.query.first()
+        users = models.User.query.all()  # noqa
+        return str(user.hobbies)
+
+    @app.route('/many_to_many_impossible_one/')
+    def many_to_many_impossible_one():
+        user = models.User.query.one()
+        users = models.User.query.all()  # noqa
+        return str(user.hobbies)
+
     @app.route('/eager_join/')
     def eager_join():
         users = models.User.query.options(sa.orm.subqueryload('hobbies')).all()
@@ -150,6 +162,14 @@ class TestNPlusOne:
         assert len(logger.log.call_args_list) == 1
         args = logger.log.call_args[0]
         assert 'User.hobbies' in args[1]
+
+    def test_many_to_many_impossible(self, objects, client, logger):
+        client.get('/many_to_many_impossible/')
+        assert not logger.log.called
+
+    def test_many_to_many_impossible_one(self, objects, client, logger):
+        client.get('/many_to_many_impossible_one/')
+        assert not logger.log.called
 
     def test_eager_join(self, objects, client, logger):
         client.get('/eager_join/')

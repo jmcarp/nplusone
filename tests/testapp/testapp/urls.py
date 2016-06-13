@@ -11,6 +11,8 @@ urlpatterns = [
     url(r'^prefetch_one_to_one/$', views.prefetch_one_to_one),
     url(r'^prefetch_one_to_one_unused/$', views.prefetch_one_to_one_unused),
     url(r'^prefetch_many_to_many/$', views.prefetch_many_to_many),
+    url(r'^prefetch_many_to_many_impossible/$', views.prefetch_many_to_many_impossible),
+    url(r'^prefetch_many_to_many_impossible_one/$', views.prefetch_many_to_many_impossible_one),
     url(r'^prefetch_many_to_many_render/$', views.prefetch_many_to_many_render),
     url(r'^prefetch_many_to_many_unused/$', views.prefetch_many_to_many_unused),
     url(r'^prefetch_many_to_many_single/$', views.prefetch_many_to_many_single),

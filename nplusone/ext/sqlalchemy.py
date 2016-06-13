@@ -97,18 +97,27 @@ def is_single(offset, limit):
 original_query_iter = query.Query.__iter__
 def query_iter(self):
     ret, clone = itertools.tee(original_query_iter(self))
-    if not is_single(self._offset, self._limit):
-        signals.load.send(
-            signals.get_worker(),
-            args=(self, ),
-            ret=list(clone),
-            parser=parse_load,
-        )
+    signal = (
+        signals.ignore_load
+        if is_single(self._offset, self._limit)
+        else signals.load
+    )
+    signal.send(
+        signals.get_worker(),
+        args=(self, ),
+        ret=list(clone),
+        parser=parse_load,
+    )
     return ret
 query.Query.__iter__ = query_iter
 
 
-# Ignore `load` events during calls to `one`
+def parse_get(args, kwargs, context, ret):
+    return [to_key(ret)] if hasattr(ret, '__table__') else []
+
+
+# Ignore records loaded during `one`
 for method in ['one_or_none', 'one']:
     original = getattr(query.Query, method)
-    setattr(query.Query, method, signals.designalify(signals.load, original))
+    decorated = signals.signalify(signals.ignore_load, original, parse_get)
+    setattr(query.Query, method, decorated)

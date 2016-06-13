@@ -49,6 +49,18 @@ def prefetch_many_to_many(request):
     return HttpResponse(list(user.hobbies.all()) for user in users)
 
 
+def prefetch_many_to_many_impossible(request):
+    user = models.User.objects.first()
+    users = list(models.User.objects.all())  # noqa
+    return HttpResponse(user.hobbies.all())
+
+
+def prefetch_many_to_many_impossible_one(request):
+    user = models.User.objects.get(pk=1)
+    users = list(models.User.objects.all())  # noqa
+    return HttpResponse(user.hobbies.all())
+
+
 def prefetch_many_to_many_render(request):
     users = models.User.objects.all().prefetch_related('hobbies')
     template = '''

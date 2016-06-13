@@ -79,8 +79,9 @@ class Listener(object):
 class LazyListener(Listener):
 
     def setup(self):
-        self.loaded = set()
+        self.loaded, self.ignore = set(), set()
         signals.load.connect(self.handle_load, sender=signals.get_worker())
+        signals.ignore_load.connect(self.handle_ignore, sender=signals.get_worker())
         signals.lazy_load.connect(self.handle_lazy, sender=signals.get_worker())
 
     def handle_load(self, caller, args=None, kwargs=None, context=None, ret=None,
@@ -88,9 +89,15 @@ class LazyListener(Listener):
         instances = parser(args, kwargs, context, ret)
         self.loaded.update(instances)
 
-    def handle_lazy(self, caller, args=None, kwargs=None, context=None, parser=None):
+    def handle_ignore(self, caller, args=None, kwargs=None, context=None, ret=None,
+                      parser=None):
+        instances = parser(args, kwargs, context, ret)
+        self.ignore.update(instances)
+
+    def handle_lazy(self, caller, args=None, kwargs=None, context=None, ret=None,
+                    parser=None):
         model, instance, field = parser(args, kwargs, context)
-        if instance in self.loaded:
+        if instance in self.loaded and instance not in self.ignore:
             message = LazyLoadMessage(model, field)
             self.parent.notify(message)
 
@@ -105,11 +112,13 @@ class EagerListener(Listener):
     def teardown(self):
         self.log_eager()
 
-    def handle_eager(self, caller, args=None, kwargs=None, context=None, parser=None):
+    def handle_eager(self, caller, args=None, kwargs=None, context=None, ret=None,
+                     parser=None):
         self.tracker.track(*parser(args, kwargs, context))
         signals.touch.connect(self.handle_touch, sender=signals.get_worker())
 
-    def handle_touch(self, caller, args=None, kwargs=None, context=None, parser=None):
+    def handle_touch(self, caller, args=None, kwargs=None, context=None, ret=None,
+                     parser=None):
         self.touched.append(parser(args, kwargs, context))
 
     def log_eager(self):

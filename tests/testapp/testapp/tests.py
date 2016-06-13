@@ -196,12 +196,12 @@ class TestIntegration:
         client.get('/prefetch_many_to_many/')
         assert not logger.log.called
 
-    def test_prefetch_many_to_many_impossible(self, objects, client, logger):
-        client.get('/prefetch_many_to_many_impossible/')
+    def test_many_to_many_impossible(self, objects, client, logger):
+        client.get('/many_to_many_impossible/')
         assert not logger.log.called
 
-    def test_prefetch_many_to_many_impossible_one(self, objects, client, logger):
-        client.get('/prefetch_many_to_many_impossible_one/')
+    def test_many_to_many_impossible_one(self, objects, client, logger):
+        client.get('/many_to_many_impossible_one/')
         assert not logger.log.called
 
     def test_prefetch_many_to_many_render(self, objects, client, logger):

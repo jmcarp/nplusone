@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.7.2 (2016-06-13)
+==================
+* Ignore lazy loads on records singly and multiply loaded in same request.
+* Handle Django `process_response` when `process_request` not called.
+
 0.7.1 (2016-06-03)
 ==================
 * Fix field name on Django `prefetch_related`.

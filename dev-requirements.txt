@@ -1,5 +1,5 @@
 # Build tasks
-invoke
+invoke>=0.13.0
 
 # Testing
 mock

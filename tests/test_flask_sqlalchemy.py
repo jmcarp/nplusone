@@ -5,7 +5,7 @@ import flask
 import pytest
 import webtest
 import sqlalchemy as sa
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 from nplusone.core import exceptions
 from nplusone.ext.flask_sqlalchemy import NPlusOne

@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import inspect
 import itertools
 
 from sqlalchemy.orm import query
@@ -68,10 +69,9 @@ def parse_populate(args, kwargs, context):
 original_populate_full = loading._populate_full
 def _populate_full(*args, **kwargs):
     ret = original_populate_full(*args, **kwargs)
-    dict_ = args[3]
-    populators = args[7]
-    for key, _ in populators.get('eager', []):
-        if dict_.get(key):
+    context = inspect.getcallargs(original_populate_full, *args, **kwargs)
+    for key, _ in context['populators'].get('eager', []):
+        if context['dict_'].get(key):
             signals.eager_load.send(
                 signals.get_worker(),
                 args=args,
@@ -118,6 +118,9 @@ def parse_get(args, kwargs, context, ret):
 
 # Ignore records loaded during `one`
 for method in ['one_or_none', 'one']:
-    original = getattr(query.Query, method)
+    try:
+        original = getattr(query.Query, method)
+    except AttributeError:
+        continue
     decorated = signals.signalify(signals.ignore_load, original, parse_get)
     setattr(query.Query, method, decorated)

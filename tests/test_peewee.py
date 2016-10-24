@@ -129,10 +129,11 @@ class TestManyToOne:
         assert len(calls) == 0
 
     def test_many_to_one_reverse_prefetch(self, models, session, objects, calls):
-        addresses = models.Address.select()
-        users = models.User.select()
-        address = pw.prefetch(addresses, users).first()
-        address.user
+        addresses = pw.prefetch(
+            models.Address.select(),
+            models.User.select(),
+        )
+        addresses[0].user
         assert len(calls) == 0
 
 

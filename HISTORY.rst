@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.7.3 (2016-10-23)
+==================
+* Handle varying _populate_full signatures across SQLAlchemy versions. Thanks @mrluanma!
+* Update Django test versions.
+
 0.7.2 (2016-06-13)
 ==================
 * Ignore lazy loads on records singly and multiply loaded in same request.

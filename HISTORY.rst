@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.8.0 (2017-04-10)
+==================
+* Support Django 1.11.
+
 0.7.3 (2016-10-23)
 ==================
 * Handle varying _populate_full signatures across SQLAlchemy versions. Thanks @mrluanma!

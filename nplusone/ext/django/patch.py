@@ -55,14 +55,30 @@ def signalify_queryset(func, parser=None, **context):
         ctx['args'] = context.get('args', args)
         ctx['kwargs'] = context.get('kwargs', kwargs)
         queryset._clone = signalify_queryset(queryset._clone, parser=parser, **ctx)
-        queryset.iterator = signals.signalify(
-            signals.lazy_load,
-            queryset.iterator,
-            parser=parser,
-            **ctx
-        )
+        queryset._fetch_all = signalify_fetch_all(queryset, parser=parser, **ctx)
         queryset._context = ctx
         return queryset
+    return wrapped
+
+
+def signalify_fetch_all(queryset, parser=None, **context):
+    """Signal lazy load when `QuerySet._fetch_all` fetches rows. Note: patch
+    `_fetch_all` instead of `iterator` since, as of Django 1.11, the former is
+    used for all fetches while the latter is not.
+    """
+    func = queryset._fetch_all
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if queryset._result_cache is None:
+            signals.lazy_load.send(
+                get_worker(),
+                args=args,
+                kwargs=kwargs,
+                ret=None,
+                context=context,
+                parser=parser,
+            )
+        return func(*args, **kwargs)
     return wrapped
 
 

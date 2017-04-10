@@ -9,8 +9,6 @@ from django.conf import settings
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 
-from django_webtest import DjangoTestApp
-
 from nplusone.ext.django.patch import setup_state
 from nplusone.ext.django.middleware import NPlusOneMiddleware
 
@@ -20,11 +18,6 @@ from . import models
 @pytest.fixture(scope='module', autouse=True)
 def setup():
     setup_state()
-
-
-@pytest.fixture
-def client():
-    return DjangoTestApp()
 
 
 @pytest.fixture

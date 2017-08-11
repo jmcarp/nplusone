@@ -6,6 +6,11 @@ import six
 
 from django.conf import settings
 
+try:
+    from django.utils.deprecation import MiddlewareMixin
+except ImportError:
+    MiddlewareMixin = object
+
 from nplusone.core import listeners
 from nplusone.core import notifiers
 
@@ -21,7 +26,7 @@ class DjangoRule(listeners.Rule):
         )
 
 
-class NPlusOneMiddleware(object):
+class NPlusOneMiddleware(MiddlewareMixin):
 
     def __init__(self):
         self.listeners = weakref.WeakKeyDictionary()

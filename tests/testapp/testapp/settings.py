@@ -14,6 +14,8 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 import logging
 
+import django
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -42,7 +44,7 @@ INSTALLED_APPS = (
     'testapp',
 )
 
-MIDDLEWARE_CLASSES = (
+_middleware_classes = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -52,6 +54,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'nplusone.ext.django.NPlusOneMiddleware',
 )
+
+if django.VERSION >= (1, 10):
+    MIDDLEWARE = _middleware_classes
+else:
+    MIDDLEWARE_CLASSES = _middleware_classes
 
 ROOT_URLCONF = 'testapp.urls'
 

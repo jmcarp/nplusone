@@ -39,7 +39,7 @@ install:
 before_script:
   - flake8 .
 
-script: py.test
+script: pytest
 
 after_success:
   codecov

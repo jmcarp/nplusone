@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.8.1 (2017-08-13)
+==================
+* Support new Django middleware interface. Thanks @noisecapella!
+
 0.8.0 (2017-04-10)
 ==================
 * Support Django 1.11.

@@ -28,7 +28,8 @@ class DjangoRule(listeners.Rule):
 
 class NPlusOneMiddleware(MiddlewareMixin):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(NPlusOneMiddleware, self).__init__(*args, **kwargs)
         self.listeners = weakref.WeakKeyDictionary()
 
     def load_config(self):

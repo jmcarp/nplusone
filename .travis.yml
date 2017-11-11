@@ -1,12 +1,9 @@
 language: python
-
 sudo: false
-
 python:
-- "2.7"
-- "3.6"
-- "pypy"
-
+- '2.7'
+- '3.6'
+- pypy
 env:
   global:
   - PYTHONPATH=tests/testapp
@@ -16,26 +13,27 @@ env:
   - DJANGO_VERSION=">=1.10,<1.11"
   - DJANGO_VERSION=">=1.11,<2.0"
   - DJANGO_VERSION="==2.0b1"
-
 matrix:
   exclude:
-  - python: "2.7"
+  - python: '2.7'
     env: DJANGO_VERSION="==2.0b1"
-  - python: "pypy"
+  - python: pypy
     env: DJANGO_VERSION="==2.0b1"
-
 before_install:
 - travis_retry pip install codecov
-
 install:
 - travis_retry pip install -U -r dev-requirements.txt
 - travis_retry pip install -U "django$DJANGO_VERSION"
 - travis_retry pip install -U .
-
 before_script:
 - flake8 .
-
 script: pytest
-
-after_success:
-  codecov
+after_success: codecov
+deploy:
+  provider: pypi
+  user: jmcarp
+  password:
+    secure: RV3Qstt02rsK+p6UM+fLyv/21ARtu+sOHO7L1lDK4zAg+EBFMMD5ey19ljXgpMV8yssPZ1cjKDfszw8veVoGpTZSnRDFuR6X5KZtmkfmfKeyFo2lzqbuOYgOhHOYZJAWC5ED7sB0ufKQs0/trzXVDEaLR9MMFfvoHRQ7xmS3L3acqjIUofijyLieagSdEvHAam7YpeabKB3+mofcVsPYp+gtNWiSyrp/m4ZhKFeKLz1eWKfpE2L0iiRIuXW4cZ4vLTUj0m3bp+iJ+lb6XjZSZHQWuFEs4/Zlj9MpQTJwLIVCw88fIpZe7aowTbRQnGoqRIEkLFhUl4+d6xdQp71Fbewod/flLYL4hM6AWnVlt2pK5tkbTv91lEvnvRMzSR7ctOWle5BhErCLRpJEF6gZ9xHdNlaYAm4hNPfT4sDgyDxVG3Yyq0grHAKSzlhFp+O33eaZWf8zkKk9Rq/pddPa0KfoZRE6vYa8G74ebiOiWyjfgucqnREI4qMYkhv3+Sm+JN/AQm7bmV0OOjGLcLsbB0FMRAg0pNeaoXGZ1p8RXtx77MyYVs82lT19p+BVX+l+yUR+YiMrnqzcntsMNn5WNeJDIprqX7pNgAFeHygruTPZlCQ8p5lby5gNgP5Clae62vqjswTmS439WrmGurrJzer9wyLYaDV9+oDR9EguuKI=
+  on:
+    tags: true
+  distributions: sdist bdist_wheel

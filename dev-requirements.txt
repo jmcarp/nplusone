@@ -13,10 +13,6 @@ tox>=1.5.0
 pep8==1.6.1  # Respect ignores in `setup.cfg`
 flake8
 
-# Packaging
-wheel
-twine
-
 # ORMs
 Django
 SQLAlchemy

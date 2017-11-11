@@ -89,11 +89,15 @@ def get_related_name(model):
 def parse_field(field):
     return (
         (
-            field.rel.model  # Django >= 1.8
-            if hasattr(field.rel, 'model')
+            field.related_model  # Django >= 1.8
+            if hasattr(field, 'related_model')
             else field.related_field.model  # Django <= 1.8
         ),
-        field.rel.related_name or get_related_name(field.rel.related_model),
+        (
+            field.remote_field.name  # Django >= 1.8
+            if hasattr(field, 'remote_field')
+            else field.rel.related_name  # Django <= 1.8
+        ) or get_related_name(field.related_model),
     )
 
 
@@ -321,7 +325,7 @@ def parse_eager_select(args, kwargs, context):
     field = klass_info['field']
     model, name = (
         parse_field(field)
-        if klass_info['reverse']
+        if instance._meta.model != field.model
         else parse_reverse_field(field)
     )
     return model, name, [to_key(instance)], id(select)

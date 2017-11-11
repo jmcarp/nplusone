@@ -8,7 +8,7 @@ class User(models.Model):
 
 
 class Pet(models.Model):
-    user = models.ForeignKey('User')
+    user = models.ForeignKey('User', on_delete=models.CASCADE)
 
 
 class Allergy(models.Model):
@@ -16,11 +16,12 @@ class Allergy(models.Model):
 
 
 class Occupation(models.Model):
-    user = models.OneToOneField('User', related_name='occupation')
+    user = models.OneToOneField(
+        'User', on_delete=models.CASCADE, related_name='occupation')
 
 
 class Address(models.Model):
-    user = models.ForeignKey('User', related_name='addresses')
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='addresses')
 
 
 class Hobby(models.Model):

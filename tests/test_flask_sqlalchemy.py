@@ -44,7 +44,7 @@ def logger():
     return mock.Mock()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def app(db, models, logger):
     app = flask.Flask(__name__)
     app.config['TESTING'] = True
@@ -62,7 +62,7 @@ def wrapper(app):
 
 
 @pytest.fixture
-def routes(app, models):
+def routes(app, models, wrapper):
     @app.route('/many_to_one/')
     def many_to_one():
         users = models.User.query.all()
@@ -77,6 +77,12 @@ def routes(app, models):
     def many_to_one_first():
         user = models.User.query.first()
         return str(user.addresses)
+
+    @app.route('/many_to_one_ignore/')
+    def many_to_one_ignore():
+        with wrapper.ignore('lazy_load'):
+            users = models.User.query.all()
+            return str(users[0].addresses)
 
     @app.route('/many_to_many/')
     def many_to_many():
@@ -155,6 +161,10 @@ class TestNPlusOne:
 
     def test_many_to_one_first(self, objects, client, logger):
         client.get('/many_to_one_first/')
+        assert not logger.log.called
+
+    def test_many_to_one_ignore(self, objects, client, logger):
+        client.get('/many_to_one_ignore/')
         assert not logger.log.called
 
     def test_many_to_many(self, objects, client, logger):

@@ -46,7 +46,7 @@ def models(Base):
     )
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def session(db, models):
     db.create_tables(
         [

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
+
 import six
 
 from flask import g
 from flask import request
 
-import nplusone.ext.sqlalchemy  # noqa
-
 from nplusone.core import signals
 from nplusone.core import listeners
 from nplusone.core import notifiers
+import nplusone.ext.sqlalchemy  # noqa
 
 
 def get_worker():
@@ -26,25 +26,22 @@ setup_state()
 
 
 class NPlusOne(object):
-    app = None
-
     def __init__(self, app=None):
-        if app:
+        self.app = app
+        if app is not None:
             self.init_app(app)
 
-    def load_config(self):
-        self.notifiers = notifiers.init(self.app.config)
+    def load_config(self, app):
+        self.notifiers = notifiers.init(app.config)
         self.whitelist = [
             listeners.Rule(**item)
-            for item in self.app.config.get('NPLUSONE_WHITELIST', [])
+            for item in app.config.get('NPLUSONE_WHITELIST', [])
         ]
 
     def init_app(self, app):
-        self.app = app
-
         @app.before_request
         def connect():
-            self.load_config()
+            self.load_config(app)
             g.listeners = getattr(g, 'listeners', {})
             for name, listener_type in six.iteritems(listeners.listeners):
                 g.listeners[name] = listener_type(self)

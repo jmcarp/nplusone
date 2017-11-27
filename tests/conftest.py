@@ -14,7 +14,7 @@ PATTERNS = [
 ]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def calls():
     calls = []
     def subscriber(sender, args=None, kwargs=None, context=None, ret=None, parser=None):
@@ -28,7 +28,7 @@ def calls():
     yield calls
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def lazy_listener():
     mock_parent = mock.Mock()
     listener = listeners.LazyListener(mock_parent)

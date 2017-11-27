@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.8.2 (2017-11-27)
+==================
+* Support standard flask extension initialization. Thanks @dcramer!
+
 0.8.1 (2017-08-13)
 ==================
 * Support new Django middleware interface. Thanks @noisecapella!

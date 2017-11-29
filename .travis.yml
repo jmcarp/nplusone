@@ -1,8 +1,8 @@
 language: python
 sudo: false
 python:
-- '2.7'
-- '3.6'
+- "2.7"
+- "3.6"
 - pypy
 env:
   global:
@@ -15,25 +15,31 @@ env:
   - DJANGO_VERSION="==2.0b1"
 matrix:
   exclude:
-  - python: '2.7'
+  - python: "2.7"
     env: DJANGO_VERSION="==2.0b1"
   - python: pypy
     env: DJANGO_VERSION="==2.0b1"
-before_install:
-- travis_retry pip install codecov
 install:
+- travis_retry pip install codecov
 - travis_retry pip install -U -r dev-requirements.txt
 - travis_retry pip install -U "django$DJANGO_VERSION"
 - travis_retry pip install -U .
-before_script:
+script:
 - flake8 .
-script: pytest
+- pytest
 after_success: codecov
-deploy:
-  provider: pypi
-  user: jm.carp
-  password:
-    secure: P3woJdZse2/7bYeln/e3W6HEJvJ0cAqqkYwwlnfset3CuDF3+2UE4uJ2mJqtKKcfoJiIFv7wOOaEtvYI5M5p5Y4LOE9ArVpz9kDJw5eqd28jMGJJ3E5V25y29hKw40uUBq9vjrL6tFR2kPqEf1RmRKwuCbkj7nNwDkHm6oAbgph9uZ14BHtWGMpfj0qHRaH16I8lHJ0GBZfX9cd51Rp8UxcOBCI4mASwWWeuqgwTl9SYuKWitgdwiga4epBJ4w8wgWEDaQvRqIaW7vKsndC/RvXF7Oi9xLL1spPbYtCYr5LVL3v3QvCBO8L0KIj0m7cCmBo9G8vzNT5GZwl+x+MbCgU5eU7sxojdX3LVO3b2yoCpGcxnKGCXZP2JB2oKZ1Fn61SNdO3BmJBsmsMJScRMxV9T0uPTWwxVa+/RVzHxulHlJTxWHUrjjYpd7tn5l6Kise676Nx54fc7JDDoHOYKI44Ztb8UpeJzJYTm2sDYOrFdHptv8lDLumqptpiDkqmsfOS+u7OsLWAUj+eRXGV3OSRs3ezMtKcD3l290mqrY3ibJfxpJZn0djoat+L1On2T3seI3AhSuCiu4QAOxvPAEUBBXO0uU+WMHk5lY4ZLBFRTaqpOc8Nv4oPOSLim4WGZsB1IYIhQ9fexk/Xl3oo+JilSh3BBwYCoZS8x/NKNpNQ=
-  on:
-    tags: true
-  distributions: sdist bdist_wheel
+jobs:
+  include:
+  - stage: deploy
+    env: []
+    install: true
+    script: true
+    after_success: true
+    deploy:
+      provider: pypi
+      user: jm.carp
+      password:
+        secure: P3woJdZse2/7bYeln/e3W6HEJvJ0cAqqkYwwlnfset3CuDF3+2UE4uJ2mJqtKKcfoJiIFv7wOOaEtvYI5M5p5Y4LOE9ArVpz9kDJw5eqd28jMGJJ3E5V25y29hKw40uUBq9vjrL6tFR2kPqEf1RmRKwuCbkj7nNwDkHm6oAbgph9uZ14BHtWGMpfj0qHRaH16I8lHJ0GBZfX9cd51Rp8UxcOBCI4mASwWWeuqgwTl9SYuKWitgdwiga4epBJ4w8wgWEDaQvRqIaW7vKsndC/RvXF7Oi9xLL1spPbYtCYr5LVL3v3QvCBO8L0KIj0m7cCmBo9G8vzNT5GZwl+x+MbCgU5eU7sxojdX3LVO3b2yoCpGcxnKGCXZP2JB2oKZ1Fn61SNdO3BmJBsmsMJScRMxV9T0uPTWwxVa+/RVzHxulHlJTxWHUrjjYpd7tn5l6Kise676Nx54fc7JDDoHOYKI44Ztb8UpeJzJYTm2sDYOrFdHptv8lDLumqptpiDkqmsfOS+u7OsLWAUj+eRXGV3OSRs3ezMtKcD3l290mqrY3ibJfxpJZn0djoat+L1On2T3seI3AhSuCiu4QAOxvPAEUBBXO0uU+WMHk5lY4ZLBFRTaqpOc8Nv4oPOSLim4WGZsB1IYIhQ9fexk/Xl3oo+JilSh3BBwYCoZS8x/NKNpNQ=
+      on:
+        tags: true
+      distributions: sdist bdist_wheel

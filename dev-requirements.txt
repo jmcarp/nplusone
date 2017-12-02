@@ -14,7 +14,8 @@ pep8==1.6.1  # Respect ignores in `setup.cfg`
 flake8
 
 # ORMs
-Django
+# TODO: Restore after dropping py27 support
+# Django
 SQLAlchemy
 Flask-SQLAlchemy
 peewee

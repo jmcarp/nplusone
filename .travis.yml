@@ -12,13 +12,13 @@ env:
   - DJANGO_VERSION=">=1.9,<1.10"
   - DJANGO_VERSION=">=1.10,<1.11"
   - DJANGO_VERSION=">=1.11,<2.0"
-  - DJANGO_VERSION="==2.0b1"
+  - DJANGO_VERSION=">=2.0,<2.1"
 matrix:
   exclude:
   - python: "2.7"
-    env: DJANGO_VERSION="==2.0b1"
+    env: DJANGO_VERSION=">=2.0,<2.1"
   - python: pypy
-    env: DJANGO_VERSION="==2.0b1"
+    env: DJANGO_VERSION=">=2.0,<2.1"
 install:
 - travis_retry pip install codecov
 - travis_retry pip install -U -r dev-requirements.txt

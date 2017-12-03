@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.9.0 (2017-12-02)
+==================
+* Support Django 2.0.
+
 0.8.2 (2017-11-27)
 ==================
 * Support standard flask extension initialization. Thanks @dcramer!

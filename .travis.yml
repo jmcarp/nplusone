@@ -30,10 +30,11 @@ script:
 after_success: codecov
 jobs:
   include:
-  - stage: deploy
+  - stage: PyPI release
+    if: tag IS present
     env: []
     install: true
-    script: true
+    script: echo 'Releasing to PyPI...'
     after_success: true
     deploy:
       provider: pypi

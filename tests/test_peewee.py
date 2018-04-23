@@ -3,11 +3,6 @@
 import pytest
 import peewee as pw
 
-try:
-    from playhouse.fields import ManyToManyField
-except ImportError:
-    from playhouse.shortcuts import ManyToManyField
-
 from nplusone.core import signals
 import nplusone.ext.peewee  # noqa
 
@@ -34,10 +29,10 @@ def models(Base):
         pass
 
     class User(Base):
-        hobbies = ManyToManyField(Hobby, related_name='users')
+        hobbies = pw.ManyToManyField(Hobby, backref='users')
 
     class Address(Base):
-        user = pw.ForeignKeyField(User, related_name='addresses')
+        user = pw.ForeignKeyField(User, backref='addresses')
 
     return Bunch(
         Hobby=Hobby,
@@ -77,8 +72,8 @@ def objects(models, session):
 class TestManyToOne:
 
     def test_many_to_one(self, models, session, objects, calls, lazy_listener):
-        users = list(models.User.select())
-        users[0].addresses
+        users = models.User.select()
+        list(users[0].addresses)
         assert len(calls) == 1
         call = calls[0]
         assert call.objects == (models.User, 'User:1', 'addresses')
@@ -87,27 +82,25 @@ class TestManyToOne:
 
     def test_many_to_one_get(self, models, session, objects, calls, lazy_listener):
         user = models.User.get()
-        user.addresses
+        list(user.addresses)
         assert len(calls) == 1
         call = calls[0]
         assert call.objects == (models.User, 'User:1', 'addresses')
         assert 'user.addresses' in ''.join(call.frame[4])
         assert not lazy_listener.parent.notify.called
 
+    def test_many_to_one_prefetch(self, models, session, objects, calls, lazy_listener):
+        users = pw.prefetch(
+            models.User.select(),
+            models.Address.select(),
+        )
+        list(users[0].addresses)
+        assert len(calls) == 0
+
     def test_many_to_one_ignore(self, models, session, objects, calls):
         user = models.User.select().first()
         with signals.ignore(signals.lazy_load):
             user.addresses
-        assert len(calls) == 0
-
-    def test_many_to_one_aggregate(self, models, session, objects, calls):
-        user = models.User.select(
-            models.User,
-            models.Address,
-        ).join(
-            models.Address
-        ).aggregate_rows().first()
-        user.addresses
         assert len(calls) == 0
 
     def test_many_to_one_reverse(self, models, session, objects, calls):

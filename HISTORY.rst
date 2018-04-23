@@ -2,6 +2,10 @@
 Changelog
 *********
 
+1.0.0 (unreleased)
+==================
+* Support Peewee 3.0.
+
 0.9.0 (2017-12-02)
 ==================
 * Support Django 2.0.

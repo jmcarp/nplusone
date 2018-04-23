@@ -18,4 +18,4 @@ flake8
 # Django
 SQLAlchemy
 Flask-SQLAlchemy
-peewee
+peewee>=3.0.0

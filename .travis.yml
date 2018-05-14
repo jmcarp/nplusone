@@ -3,7 +3,6 @@ sudo: false
 python:
 - "2.7"
 - "3.6"
-- pypy
 env:
   global:
   - PYTHONPATH=tests/testapp
@@ -16,8 +15,6 @@ env:
 matrix:
   exclude:
   - python: "2.7"
-    env: DJANGO_VERSION=">=2.0,<2.1"
-  - python: pypy
     env: DJANGO_VERSION=">=2.0,<2.1"
 install:
 - travis_retry pip install codecov

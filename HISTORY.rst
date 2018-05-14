@@ -5,7 +5,8 @@ Changelog
 1.0.0 (unreleased)
 ==================
 * Support Peewee 3.0.
-* Add `Profiler` context manager for use without HTTP requests
+* Add `Profiler` context manager for use without HTTP requests.
+* Allow model whitelist with fnmatch patterns.
 
 0.9.0 (2017-12-02)
 ==================

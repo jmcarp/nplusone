@@ -148,12 +148,19 @@ To ignore notifications from ``nplusone`` globally, configure the whitelist usin
 
     # Django config
     NPLUSONE_WHITELIST = [
-        {'label': 'n_plus_one', 'model': 'myapp.MyModel'},
+        {'label': 'n_plus_one', 'model': 'myapp.MyModel'}
     ]
 
     # Flask-SQLAlchemy config
     app.config['NPLUSONE_WHITELIST'] = [
         {'label': 'unused_eager_load', 'model': 'MyModel', 'field': 'my_field'}
+    ]
+
+You can whitelist models by exact name or by `fnmatch <https://docs.python.org/3/library/fnmatch.html>`_ patterns: ::
+
+    # Django config
+    NPLUSONE_WHITELIST = [
+        {'model': 'myapp.*'}
     ]
 
 To suppress notifications locally, use the ``ignore`` context manager: ::

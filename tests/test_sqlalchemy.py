@@ -5,6 +5,8 @@ import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 
 from nplusone.core import signals
+from nplusone.core import profiler
+from nplusone.core import exceptions
 import nplusone.ext.sqlalchemy  # noqa
 
 from tests import utils
@@ -128,3 +130,17 @@ class TestManyToMany:
 
 def test_non_orm_query(session, objects, lazy_listener):
     session.query(models.Address.id).all()
+
+
+class TestProfile:
+
+    def test_profile(self, session, objects):
+        with profiler.Profiler():
+            users = session.query(models.User).all()
+            with pytest.raises(exceptions.NPlusOneError):
+                users[0].addresses
+
+    def test_profile_whitelist(self, session, objects):
+        with profiler.Profiler(whitelist=[{'model': 'User'}]):
+            users = session.query(models.User).all()
+            users[0].addresses

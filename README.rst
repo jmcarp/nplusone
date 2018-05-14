@@ -118,6 +118,16 @@ When your app eagerly loads related data without accessing it, ``nplusone`` will
 
     Potential unnecessary eager load detected on `<model>.<field>`
 
+Generic
+*******
+
+The integrations above are coupled to the request-response cycle. To use ``nplusone`` outside the context of an HTTP request, use the `Profiler` context manager: ::
+
+    from nplusone.core import profiler
+
+    with profiler.Profiler():
+        ...
+
 Customizing notifications
 *************************
 

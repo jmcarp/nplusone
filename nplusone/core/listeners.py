@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import six
+import fnmatch
 from collections import defaultdict
 
 from nplusone.core import signals
@@ -25,7 +26,7 @@ class Rule(object):
         return (
             self.model is model or (
                 isinstance(self.model, six.string_types) and
-                self.model == model.__name__
+                fnmatch.fnmatch(model.__name__, self.model)
             )
         )
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import fnmatch
 import weakref
 
 import six
@@ -21,7 +22,10 @@ class DjangoRule(listeners.Rule):
         return (
             self.model is model or (
                 isinstance(self.model, six.string_types) and
-                self.model == '{0}.{1}'.format(model._meta.app_label, model.__name__)
+                fnmatch.fnmatch(
+                    '{0}.{1}'.format(model._meta.app_label, model.__name__),
+                    self.model,
+                )
             )
         )
 

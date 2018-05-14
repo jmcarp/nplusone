@@ -277,6 +277,11 @@ class TestIntegration:
         client.get('/many_to_many/')
         assert not logger.log.called
 
+    def test_many_to_many_whitelist_wildcard(self, objects, client, logger):
+        settings.NPLUSONE_WHITELIST = [{'model': 'testapp.*'}]
+        client.get('/many_to_many/')
+        assert not logger.log.called
+
 
 @pytest.mark.django_db
 def test_values(objects, lazy_listener):

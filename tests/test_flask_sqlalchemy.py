@@ -233,6 +233,11 @@ class TestNPlusOne:
         client.get('/many_to_many/')
         assert not logger.log.called
 
+    def test_many_to_many_whitelist_wildcard(self, app, wrapper, objects, client, logger):
+        app.config['NPLUSONE_WHITELIST'] = [{'model': 'U*r'}]
+        client.get('/many_to_many/')
+        assert not logger.log.called
+
     def test_many_to_many_whitelist_decoy(self, app, wrapper, objects, client, logger):
         app.config['NPLUSONE_WHITELIST'] = [{'model': 'Hobby'}]
         client.get('/many_to_many/')

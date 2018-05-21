@@ -2,7 +2,7 @@
 Changelog
 *********
 
-1.0.0 (unreleased)
+1.0.0 (2018-05-20)
 ==================
 * Support Peewee 3.0.
 * Add `Profiler` context manager for use without HTTP requests.

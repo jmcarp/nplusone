@@ -20,8 +20,6 @@ def get_worker():
 
 def setup_state():
     signals.get_worker = get_worker
-
-
 setup_state()
 
 

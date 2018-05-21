@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import threading
+
 import flask
 import pytest
-import blinker
 import webtest
 from flask_sqlalchemy import SQLAlchemy
 
@@ -14,9 +15,13 @@ import nplusone.ext.sqlalchemy  # noqa
 from tests import utils
 
 
+def get_worker():
+    return str(threading.current_thread().ident)
+
+
 @pytest.fixture(scope='module', autouse=True)
 def setup():
-    signals.get_worker = lambda *a, **kw: blinker.ANY
+    signals.get_worker = get_worker
 
 
 @pytest.fixture

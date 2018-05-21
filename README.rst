@@ -118,12 +118,24 @@ When your app eagerly loads related data without accessing it, ``nplusone`` will
 
     Potential unnecessary eager load detected on `<model>.<field>`
 
+WSGI
+****
+
+For other frameworks that follow the WSGI specification, wrap your application with `NPlusOneMiddleware`. You must also import the relevant ``nplusone`` extension for your ORM: ::
+
+    import bottle
+    from nplusone.ext.wsgi import NPlusOneMiddleware
+    import nplusone.ext.sqlalchemy
+
+    app = NPlusOneMiddleware(bottle.app())
+
 Generic
 *******
 
-The integrations above are coupled to the request-response cycle. To use ``nplusone`` outside the context of an HTTP request, use the `Profiler` context manager: ::
+The integrations above are coupled to the request-response cycle. To use ``nplusone`` outside the context of an HTTP request, use the ``Profiler`` context manager: You must also import the relevant ``nplusone`` extension for your ORM: ::
 
     from nplusone.core import profiler
+    import nplusone.ext.sqlalchemy
 
     with profiler.Profiler():
         ...

@@ -7,6 +7,7 @@ Changelog
 * Support Peewee 3.0.
 * Add `Profiler` context manager for use without HTTP requests.
 * Allow model whitelist with fnmatch patterns.
+* Add generic wsgi middleware.
 
 0.9.0 (2017-12-02)
 ==================

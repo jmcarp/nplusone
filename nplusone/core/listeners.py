@@ -98,6 +98,7 @@ class LazyListener(Listener):
     def handle_lazy(self, caller, args=None, kwargs=None, context=None, ret=None,
                     parser=None):
         model, instance, field = parser(args, kwargs, context)
+        self.ignore = set() # TODO: Better configure what we want to ignore
         if instance in self.loaded and instance not in self.ignore:
             message = LazyLoadMessage(model, field)
             self.parent.notify(message)

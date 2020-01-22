@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import traceback
 
 from nplusone.core import exceptions
 
@@ -49,7 +50,9 @@ class ErrorNotifier(Notifier):
         self.error = config.get('NPLUSONE_ERROR', exceptions.NPlusOneError)
 
     def notify(self, message):
-        raise self.error(message.message)
+        stack = traceback.extract_stack()
+        relevant_frame = [frame for frame in reversed(stack) if 'spark' in frame.filename][0]
+        raise self.error(message.message + ', ' + str(relevant_frame)[len('<FrameSummary '): -1])
 
 
 def init(config):

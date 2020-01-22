@@ -4,7 +4,6 @@ import re
 from setuptools import setup
 from setuptools import find_packages
 
-
 REQUIRES = [
     'six>=1.9.0',
     'blinker>=1.3',
@@ -35,13 +34,13 @@ def read(fname):
 
 
 setup(
-    name='nplusone',
+    name='nplusone-TrialSpark',
     version=find_version('nplusone/__init__.py'),
     description='Detecting the n+1 queries problem in Python',
     long_description=read('README.rst'),
     author='Joshua Carp',
     author_email='jm.carp@gmail.com',
-    url='https://github.com/jmcarp/nplusone',
+    url='https://github.com/trialspark/nplusone',
     packages=find_packages(exclude=('test*', )),
     package_dir={'nplusone': 'nplusone'},
     include_package_data=True,
@@ -62,5 +61,4 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-    test_suite='tests'
-)
+    test_suite='tests')

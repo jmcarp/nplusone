@@ -40,7 +40,7 @@ class LogNotifier(Notifier):
             frame for frame in reversed(stack) if 'spark' in frame.filename
         ][0]
         # This assumes we used structlog.get_logger to create our logger.
-        self.logger.debug(
+        self.logger.info(
             message.message,
             filename=relevant_frame.filename,
             line=relevant_frame.lineno,

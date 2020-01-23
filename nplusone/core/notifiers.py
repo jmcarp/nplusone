@@ -32,19 +32,34 @@ class LogNotifier(Notifier):
         self.logger = config.get('NPLUSONE_LOGGER',
                                  logging.getLogger('nplusone'))
         self.level = config.get('NPLUSONE_LOG_LEVEL', logging.DEBUG)
+        self.verbose = config.get('NPLUSONE_VERBOSE', False)
+        log_func_map = {
+            logging.DEBUG: self.logger.debug,
+            logging.INFO: self.logger.info,
+        }
+        self.log_func = log_func_map.get(self.level, logging.INFO)
 
     def notify(self, message):
-        # self.logger.log(self.level, message.message)
         stack = traceback.extract_stack()
-        relevant_frame = [
+        relevant_frames = [
             frame for frame in reversed(stack) if 'spark' in frame.filename
-        ][0]
+        ]
+        relevant_frame = relevant_frames[0]
+
         # This assumes we used structlog.get_logger to create our logger.
-        self.logger.info(
-            message.message,
-            filename=relevant_frame.filename,
-            line=relevant_frame.lineno,
-            name=relevant_frame.name)
+        log_info = {
+            'filename': relevant_frame.filename,
+            'line': relevant_frame.lineno,
+            'name': relevant_frame.name,
+        }
+
+        if self.verbose:
+            log_info['frames'] = '\n'.join([
+                f'{frame.filename}, {frame.lineno}, {frame.name}'
+                for frame in relevant_frames[1:]
+            ])
+
+        self.log_func(message.message, **log_info)
 
 
 class ErrorNotifier(Notifier):

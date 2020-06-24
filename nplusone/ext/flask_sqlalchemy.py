@@ -48,7 +48,7 @@ class NPlusOne(object):
         @app.after_request
         def disconnect(response):
             for name in six.iterkeys(listeners.listeners):
-                listener = g.listeners.pop(name, None)
+                listener = g.get('listeners', {}).pop(name, None)
                 if listener:
                     listener.teardown()
             return response

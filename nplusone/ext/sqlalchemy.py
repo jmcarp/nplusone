@@ -15,13 +15,13 @@ from nplusone.core import signals
 
 def to_key(instance):
     model = type(instance)
-    return ':'.join(
-        [model.__name__] +
-        [
+    return ':'.join(itertools.chain(
+        [model.__name__],
+        (
             format(instance.__dict__.get(key.key))  # Avoid recursion on __get__
             for key in get_primary_keys(model)
-        ]
-    )
+        )
+    ))
 
 
 def get_primary_keys(model):

@@ -17,6 +17,9 @@ from django.db.models.fields.related_descriptors import (
     create_reverse_many_to_one_manager,
     create_forward_many_to_many_manager,
 )
+from django.db.models.query_utils import DeferredAttribute
+
+NPLUSONE_WRAPPED = 'nplusone_wrapped'
 
 
 def get_worker():
@@ -345,3 +348,53 @@ def getitem_queryset(self, index):
         )
     return original_getitem_queryset(self, index)
 query.QuerySet.__getitem__ = getitem_queryset
+
+
+def parse_refresh_from_db(instance, fields, args, kwargs, context):
+    # Instance & fields passed via partial
+    model = type(instance)
+    return model, to_key(instance), fields[0]
+
+
+original_deferred_attribute_get = DeferredAttribute.__get__
+def deferred_attribute_get(self, instance, cls=None):
+    """
+    DeferredAttribute.__get__() is called when a deferred
+    field is accessed. It may or may not trigger a db query;
+    if it does, it's going to be a refresh_from_db() call
+    So we'll emit a `touch` from there
+    """
+    if instance is None:
+        return self
+    # Refresh-from-db, intenally, calls QuerySet.get() on our
+    # instance. Normally, this would make our instance immune
+    # to further notifications. We don't want that to happen,
+    # so we disable the ignore_load signal within refresh_from_db
+    ensure_wrapped_refresh_from_db(instance)
+    return original_deferred_attribute_get(self, instance, cls)
+DeferredAttribute.__get__ = deferred_attribute_get
+
+
+def ensure_wrapped_refresh_from_db(instance):
+    orig_refresh_from_db = instance.refresh_from_db
+    if getattr(orig_refresh_from_db, NPLUSONE_WRAPPED, False):
+        return
+    @functools.wraps(orig_refresh_from_db)
+    def refresh_from_db(fields=None, *args, **kwargs):
+        with signals.ignore(signals.ignore_load):
+            ret = orig_refresh_from_db(fields=fields, **kwargs)
+        # and now, if the refresh_from_db was called for specific fields,
+        # then it's a lazy load
+        if fields:
+            parser = functools.partial(parse_refresh_from_db, instance, fields)
+            signals.lazy_load.send(
+                get_worker(),
+                args=args,
+                kwargs=kwargs,
+                ret=ret,
+                context={},
+                parser=parser,
+            )
+        return ret
+    setattr(refresh_from_db, NPLUSONE_WRAPPED, True)
+    instance.refresh_from_db = refresh_from_db

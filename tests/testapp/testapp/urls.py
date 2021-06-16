@@ -25,4 +25,6 @@ urlpatterns = [
     url(r'^prefetch_nested_unused/$', views.prefetch_nested_unused),
     url(r'^select_nested/$', views.select_nested),
     url(r'^select_nested_unused/$', views.select_nested_unused),
+    url(r'^deferred/$', views.deferred),
+    url(r'^double_deferred/$', views.double_deferred),
 ]

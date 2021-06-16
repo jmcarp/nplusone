@@ -127,3 +127,14 @@ def select_nested(request):
 def select_nested_unused(request):
     pets = list(models.Pet.objects.all().select_related('user__occupation'))
     return HttpResponse(pets[0])
+
+
+def deferred(request):
+    meds = list(models.Medicine.objects.defer('name'))
+    return HttpResponse("; ".join(med.name for med in meds))
+
+def double_deferred(request):
+    meds = list(models.Medicine.objects.only('id'))
+    return HttpResponse("; ".join(
+        med.name + (' *' if med.prescription else '') for med in meds
+    ))

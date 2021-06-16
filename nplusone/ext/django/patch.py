@@ -6,26 +6,17 @@ import functools
 import importlib
 import threading
 
-import django
 from django.db.models import query
 from django.db.models import Model
 
 from nplusone.core import signals
 
-if django.VERSION >= (1, 9):  # pragma: no cover
-    from django.db.models.fields.related_descriptors import (
-        ReverseOneToOneDescriptor,
-        ForwardManyToOneDescriptor,
-        create_reverse_many_to_one_manager,
-        create_forward_many_to_many_manager,
-    )
-else:  # pragma: no cover
-    from django.db.models.fields.related import (
-        SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor,
-        ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor,
-        create_foreign_related_manager as create_reverse_many_to_one_manager,
-        create_many_related_manager as create_forward_many_to_many_manager,
-    )
+from django.db.models.fields.related_descriptors import (
+    ReverseOneToOneDescriptor,
+    ForwardManyToOneDescriptor,
+    create_reverse_many_to_one_manager,
+    create_forward_many_to_many_manager,
+)
 
 
 def get_worker():
@@ -88,16 +79,8 @@ def get_related_name(model):
 
 def parse_field(field):
     return (
-        (
-            field.related_model  # Django >= 1.8
-            if hasattr(field, 'related_model')
-            else field.related_field.model  # Django <= 1.8
-        ),
-        (
-            field.remote_field.name  # Django >= 1.8
-            if hasattr(field, 'remote_field')
-            else field.rel.related_name  # Django <= 1.8
-        ) or get_related_name(field.related_model),
+        field.related_model,
+        field.remote_field.name or get_related_name(field.related_model),
     )
 
 
@@ -142,11 +125,7 @@ def parse_many_related_queryset(args, kwargs, context):
     rel = context['rel']
     manager = context['args'][0]
     model = manager.instance.__class__
-    related_model = (
-        manager.target_field.related_model  # Django >= 1.8
-        if hasattr(manager.target_field, 'related_model')
-        else manager.target_field.related_field.model  # Django <= 1.8
-    )
+    related_model = manager.target_field.related_model
     field = manager.prefetch_cache_name if rel.related_name else None
     return (
         model,

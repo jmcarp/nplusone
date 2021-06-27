@@ -7,10 +7,7 @@ import six
 
 from django.conf import settings
 
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:
-    MiddlewareMixin = object
+from django.utils.deprecation import MiddlewareMixin
 
 from nplusone.core import listeners
 from nplusone.core import notifiers

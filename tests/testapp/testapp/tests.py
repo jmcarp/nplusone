@@ -8,6 +8,7 @@ import pytest
 from django.conf import settings
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
+from django.test import override_settings
 
 from nplusone.ext.django.patch import setup_state
 from nplusone.ext.django.middleware import NPlusOneMiddleware
@@ -32,6 +33,7 @@ def objects():
     address = models.Address.objects.create(user=user)
     hobby = models.Hobby.objects.create()
     user.hobbies.add(hobby)
+    medicine = models.Medicine.objects.create(name="Allergix")
     return locals()
 
 
@@ -130,6 +132,23 @@ class TestManyToMany:
     def test_many_to_many_reverse_prefetch(self, objects, calls):
         hobbies = models.Hobby.objects.all().prefetch_related('users')
         list(hobbies[0].users.all())
+        assert len(calls) == 0
+
+
+@pytest.mark.django_db
+class TestDeferred:
+
+    def test_deferred(self, objects, calls):
+        medicine = list(models.Medicine.objects.defer('name'))[0]
+        medicine.name
+        assert len(calls) == 1
+        call = calls[0]
+        assert call.objects == (models.Medicine, 'Medicine:1', 'name')
+        assert 'medicine.name' in ''.join(call.frame[4])
+
+    def test_non_deferred(self, objects, calls):
+        medicine = list(models.Medicine.objects.all())[0]
+        medicine.name
         assert len(calls) == 0
 
 
@@ -272,15 +291,28 @@ class TestIntegration:
         assert any('Pet.user' in call[1] for call in calls)
         assert any('User.occupation' in call[1] for call in calls)
 
+    @override_settings(NPLUSONE_WHITELIST=[{'model': 'testapp.User'}])
     def test_many_to_many_whitelist(self, objects, client, logger):
-        settings.NPLUSONE_WHITELIST = [{'model': 'testapp.User'}]
         client.get('/many_to_many/')
         assert not logger.log.called
 
+    @override_settings(NPLUSONE_WHITELIST=[{'model': 'testapp.*'}])
     def test_many_to_many_whitelist_wildcard(self, objects, client, logger):
-        settings.NPLUSONE_WHITELIST = [{'model': 'testapp.*'}]
         client.get('/many_to_many/')
         assert not logger.log.called
+
+    def test_deferred(self, objects, client, logger):
+        client.get('/deferred/')
+        assert len(logger.log.call_args_list) == 1
+        args = logger.log.call_args[0]
+        assert 'Medicine.name' in args[1]
+
+    def test_double_deferred(self, objects, client, logger):
+        client.get('/double_deferred/')
+        assert len(logger.log.call_args_list) == 2
+        messages = sorted({args[0][1] for args in logger.log.call_args_list})
+        assert 'Medicine.name' in messages[0]
+        assert 'Medicine.prescription' in messages[1]
 
 
 @pytest.mark.django_db

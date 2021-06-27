@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import traceback
 
 from nplusone.core import exceptions
 
@@ -37,6 +38,12 @@ class LogNotifier(Notifier):
         self.level = config.get('NPLUSONE_LOG_LEVEL', logging.DEBUG)
 
     def notify(self, message):
+        self.logger.log(self.level, message.message)
+
+
+class TraceNotifier(LogNotifier):
+    def notify(self, message):
+        self.logger.log(self.level, "".join(traceback.format_stack()))
         self.logger.log(self.level, message.message)
 
 

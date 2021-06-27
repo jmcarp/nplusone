@@ -26,3 +26,8 @@ class Address(models.Model):
 
 class Hobby(models.Model):
     pass
+
+
+class Medicine(models.Model):
+    name = models.CharField(max_length=20)
+    prescription = models.BooleanField(default=False)

@@ -5,6 +5,7 @@ import fnmatch
 from collections import defaultdict
 
 from nplusone.core import signals
+from nplusone.core.stack import get_caller
 
 
 class Rule(object):
@@ -39,6 +40,7 @@ class Message(object):
     def __init__(self, model, field):
         self.model = model
         self.field = field
+        self.caller = get_caller()
 
     @property
     def message(self):
@@ -46,6 +48,7 @@ class Message(object):
             label=self.label,
             model=self.model.__name__,
             field=self.field,
+            caller=f"{self.caller.filename}:{self.caller.lineno} in {self.caller.function}",
         )
 
     def match(self, rules):
@@ -57,7 +60,7 @@ class Message(object):
 
 class LazyLoadMessage(Message):
     label = 'n_plus_one'
-    formatter = 'Potential n+1 query detected on `{model}.{field}`'
+    formatter = 'Potential n+1 query detected on `{model}.{field}` at {caller}'
 
 
 class EagerLoadMessage(Message):

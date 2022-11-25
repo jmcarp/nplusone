@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import warnings
 
 from nplusone.core import exceptions
 
@@ -50,6 +51,15 @@ class ErrorNotifier(Notifier):
 
     def notify(self, message):
         raise self.error(message.message)
+
+
+class WarningNotifier(Notifier):
+
+    CONFIG_KEY = 'NPLUSONE_WARNINGS'
+    ENABLED_DEFAULT = False
+
+    def notify(self, message):
+        warnings.warn(message.message)
 
 
 def init(config):

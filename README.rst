@@ -153,6 +153,14 @@ By default, ``nplusone`` logs all potentially unnecessary queries using a logger
 
 The exception type can also be specified, if desired, using the ``NPLUSONE_ERROR`` option.
 
+When the `NPLUSONE_WARNINGS` configuration option is set, ``nplusone`` issues a warning using python warnings library. ::
+    # Django config
+    NPLUSONE_WARNINGS = True
+
+    # Flask config
+    app.config['NPLUSONE_WARNINGS'] = True
+
+
 Ignoring notifications
 **********************
 
